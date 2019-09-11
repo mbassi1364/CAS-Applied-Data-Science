@@ -1,3 +1,5 @@
+<div style="width:1200px;">
+
 # About the Data
 
 ## Data Source
@@ -7,7 +9,9 @@ This view contains several hundert historicized system statistics, i.e. snapshot
 real time system statistic. The snapshots are taken at the end of every full hour; however
 this might vary due to system restart, or when the database is under stress.
 
-The statistics are described in the Oracle Database Reference document; to be found online
+The view SYS.DBA_HIST_SYSSTAT is described in the Oracle Database Reference document, to be
+found online at http://docs.oracle.com/cd/E11882_01/server.112/e40402/toc.htm.
+The statistics themselves are described in the same document, section E _Statistics Descriptions_,
 at https://docs.oracle.com/cd/E11882_01/server.112/e40402/stats.htm#REFRN103.
 
 **N.B.** : Oracle system statistics are running sums. Upon every restart of a database instance,
@@ -73,17 +77,17 @@ for the integration database, and dba_hist_sysstat.prod.dsv for the production d
 
 ### Database load statistics
 
-* application wait time
-* cluster wait time
-* concurrency wait time
-* user I/O wait time
-* db block changes
-* enqueue requests
-* execute count
-* global enqueue gets async
-* global enqueue gets sync
-* parse count (total)
-* user calls
+* application wait time (in centiseconds)
+* cluster wait time (in centiseconds)
+* concurrency wait time (in centiseconds)
+* user I/O wait time (in centiseconds)
+* db block changes (number)
+* enqueue requests (number)
+* execute count (number)
+* global enqueue gets async (number)
+* global enqueue gets sync (number)
+* parse count (total, number)
+* user calls (number)
 
 The first four statistics are the total wait times for the wait classes _Application_,
 _Concurrency_, _Cluster_ and _User I/O_. The other statistics allow to interpret various
@@ -99,7 +103,7 @@ handle global cache requests is quite complex, and the system statistics allow t
 measure almost every single step. The statistics chosen here however are of the
 _summary_ type.
 
-The statistics chosen are
+The statistics chosen &ndash; all numbers &ndash; are
 
 * gc cr blocks received
 * gc cr blocks served
@@ -116,10 +120,11 @@ The statistics chosen are
 The two statistics below measure the overall wait time for the to most
 import global cache request methods, _consistent read_, and _current read_.
 
-* gc cr block receive time
-* gc current block receive time
+* gc cr block receive time (centiseconds)
+* gc current block receive time (centiseconds)
 
 As mentioned above, the wait times for most of the intermediate protocol step could
 be measured as well. For the goal of this analysis however, only the end-to-end wait
 times are of interest.
 
+</div>
