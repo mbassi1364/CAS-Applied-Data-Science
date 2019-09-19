@@ -1,0 +1,1725 @@
+## library(tcltk2)
+
+## pause <- function() {
+##     tt <- tktoplevel()
+##     tkpack( tkbutton(tt, text='Continue', command=function()tkdestroy(tt)),
+##         side='bottom')
+##     tkbind(tt,'<Key>', function()tkdestroy(tt) )
+
+##     tkwait.window(tt)
+## }
+
+pause <- function() { NA }
+
+
+setwd('C://cus/bugfix-und-entwicklung/KIHUB-7279-vergleich-cus-dbs-prod-und-inte-auf-systemebene.nach-Patch-1/statistiken.2019-08-22T0000-bis-2019-08-28T1000/last-und-rac')
+
+daten.inte <- read.csv2(file="dba_hist_sysstat.inte.dsv", sep=";", dec=".", stringsAsFactors=F)
+daten.prod <- read.csv2(file="dba_hist_sysstat.prod.dsv", sep=";", dec=".", stringsAsFactors=F)
+
+str(daten.inte)
+## 'data.frame':   232897 obs. of  6 variables:
+##  $ BEGIN_INTERVAL_TIME: chr  "2019-08-22 00:00:05" "2019-08-22 00:00:05" "2019-08-22 00:00:05" "2019-08-22 00:00:05" ...
+##  $ END_INTERVAL_TIME  : chr  "2019-08-22 01:00:22" "2019-08-22 01:00:22" "2019-08-22 01:00:22" "2019-08-22 01:00:22" ...
+##  $ SNAP_ID            : int  20070 20070 20070 20070 20070 20070 20070 20070 20070 20070 ...
+##  $ INSTANCE_NUMBER    : int  2 2 2 2 2 2 2 2 2 2 ...
+##  $ STAT_NAME          : chr  "active txn count during cleanout" "ADG parselock X get attempts" "ADG parselock X get successes" "application wait time" ...
+##  $ VALUE              : num  94067174 0 0 24287453 0 ...
+
+
+str(daten.prod)
+## 'data.frame':   239008 obs. of  6 variables:
+##  $ BEGIN_INTERVAL_TIME: chr  "2019-08-22 00:00:14" "2019-08-22 00:00:14" "2019-08-22 00:00:14" "2019-08-22 00:00:14" ...
+##  $ END_INTERVAL_TIME  : chr  "2019-08-22 01:00:16" "2019-08-22 01:00:16" "2019-08-22 01:00:16" "2019-08-22 01:00:16" ...
+##  $ SNAP_ID            : int  35567 35567 35567 35567 35567 35567 35567 35567 35567 35567 ...
+##  $ INSTANCE_NUMBER    : int  1 1 1 1 1 1 1 1 1 1 ...
+##  $ STAT_NAME          : chr  "active txn count during cleanout" "ADG parselock X get attempts" "ADG parselock X get successes" "application wait time" ...
+##  $ VALUE              : num  5.11e+08 0.00 0.00 8.39e+07 1.19e+02 ...
+
+library(data.table)
+## data.table 1.11.8  Latest news: r-datatable.com
+dt.inte = data.table(daten.inte)
+dt.prod <- data.table(daten.prod)
+
+########################
+# Letzte Startup Times CUS DB Inte:
+##  1   25.07.2019  16:30:14
+##  2   25.07.2019  16:30:16
+
+# Letzte Startup Times CUS DB Prod
+##  1   29.04.2019  15:27:14
+##  1   29.08.2019  01:08:50
+##  2   09.10.2018  09:13:25
+##  2   09.08.2019  01:09:02
+########################
+
+### Nullen der Statistiken auf den 22.8.2019 00:00
+minsnap.inte <- dt.inte[, min(SNAP_ID), by=INSTANCE_NUMBER]
+minsnap.prod <- dt.prod[, min(SNAP_ID), by=INSTANCE_NUMBER]
+
+minsnap.inte
+##    INSTANCE_NUMBER    V1
+## 1:               2 20070
+## 2:               1 20070
+
+minsnap.prod
+##    INSTANCE_NUMBER    V1
+## 1:               1 35567
+## 2:               2 35567
+
+mindt.inte <- merge(dt.inte, minsnap.inte, by.x=c("INSTANCE_NUMBER", "SNAP_ID"), by.y=c("INSTANCE_NUMBER", "V1"), all=F)
+mindt.inte
+##       INSTANCE_NUMBER SNAP_ID BEGIN_INTERVAL_TIME   END_INTERVAL_TIME                          STAT_NAME     VALUE
+##    1:               1   20070 2019-08-22 00:00:05 2019-08-22 01:00:22   active txn count during cleanout 109204302
+##    2:               1   20070 2019-08-22 00:00:05 2019-08-22 01:00:22       ADG parselock X get attempts         0
+##    3:               1   20070 2019-08-22 00:00:05 2019-08-22 01:00:22      ADG parselock X get successes         0
+##    4:               1   20070 2019-08-22 00:00:05 2019-08-22 01:00:22              application wait time  23216472
+##    5:               1   20070 2019-08-22 00:00:05 2019-08-22 01:00:22    auto extends on undo tablespace         0
+##   ---                                                                                                             
+## 1354:               2   20070 2019-08-22 00:00:05 2019-08-22 01:00:22         Workload Replay: time loss         0
+## 1355:               2   20070 2019-08-22 00:00:05 2019-08-22 01:00:22        Workload Replay: user calls         0
+## 1356:               2   20070 2019-08-22 00:00:05 2019-08-22 01:00:22  write clones created for recovery         0
+## 1357:               2   20070 2019-08-22 00:00:05 2019-08-22 01:00:22 write clones created in background     13774
+## 1358:               2   20070 2019-08-22 00:00:05 2019-08-22 01:00:22 write clones created in foreground    219902
+
+mindt.prod <- merge(dt.prod, minsnap.prod, by.x=c("INSTANCE_NUMBER", "SNAP_ID"), by.y=c("INSTANCE_NUMBER", "V1"), all=F)
+mindt.prod
+##       INSTANCE_NUMBER SNAP_ID BEGIN_INTERVAL_TIME   END_INTERVAL_TIME                          STAT_NAME     VALUE
+##    1:               1   35567 2019-08-22 00:00:14 2019-08-22 01:00:16   active txn count during cleanout 511403667
+##    2:               1   35567 2019-08-22 00:00:14 2019-08-22 01:00:16       ADG parselock X get attempts         0
+##    3:               1   35567 2019-08-22 00:00:14 2019-08-22 01:00:16      ADG parselock X get successes         0
+##    4:               1   35567 2019-08-22 00:00:14 2019-08-22 01:00:16              application wait time  83919815
+##    5:               1   35567 2019-08-22 00:00:14 2019-08-22 01:00:16    auto extends on undo tablespace       119
+##   ---                                                                                                             
+## 1354:               2   35567 2019-08-22 00:00:14 2019-08-22 01:00:18         Workload Replay: time loss         0
+## 1355:               2   35567 2019-08-22 00:00:14 2019-08-22 01:00:18        Workload Replay: user calls         0
+## 1356:               2   35567 2019-08-22 00:00:14 2019-08-22 01:00:18  write clones created for recovery         0
+## 1357:               2   35567 2019-08-22 00:00:14 2019-08-22 01:00:18 write clones created in background    164051
+## 1358:               2   35567 2019-08-22 00:00:14 2019-08-22 01:00:18 write clones created in foreground  35666711
+
+dtNulled.inte <- merge(dt.inte, mindt.inte[, list(INSTANCE_NUMBER, STAT_NAME, VALUE)] , by=c("INSTANCE_NUMBER", "STAT_NAME"), suffixes=c("", 0),all.x = T)
+setkeyv(dtNulled.inte, c("SNAP_ID", "STAT_NAME", "INSTANCE_NUMBER"))
+str(dtNulled.inte[is.na(VALUE) | is.na(STAT_NAME), ])
+## Classes ‘data.table’ and 'data.frame':  0 obs. of  7 variables:
+##  $ INSTANCE_NUMBER    : int 
+##  $ STAT_NAME          : chr 
+##  $ BEGIN_INTERVAL_TIME: chr 
+##  $ END_INTERVAL_TIME  : chr 
+##  $ SNAP_ID            : int 
+##  $ VALUE              : num 
+##  $ VALUE0             : num 
+##  - attr(*, "sorted")= chr  "SNAP_ID" "STAT_NAME" "INSTANCE_NUMBER"
+##  - attr(*, ".internal.selfref")=<externalptr> 
+dtNulled.inte[, offsetValue := VALUE - VALUE0]
+
+dtNulled.prod <- merge(dt.prod, mindt.prod[, list(INSTANCE_NUMBER, STAT_NAME, VALUE)] , by=c("INSTANCE_NUMBER", "STAT_NAME"), suffixes=c("", 0),all.x = T)
+setkeyv(dtNulled.prod, c("SNAP_ID", "STAT_NAME", "INSTANCE_NUMBER"))
+str(dtNulled.prod[is.na(VALUE) | is.na(STAT_NAME), ])
+## Classes ‘data.table’ and 'data.frame':  0 obs. of  7 variables:
+##  $ INSTANCE_NUMBER    : int 
+##  $ STAT_NAME          : chr 
+##  $ BEGIN_INTERVAL_TIME: chr 
+##  $ END_INTERVAL_TIME  : chr 
+##  $ SNAP_ID            : int 
+##  $ VALUE              : num 
+##  $ VALUE0             : num 
+##  - attr(*, "sorted")= chr  "SNAP_ID" "STAT_NAME" "INSTANCE_NUMBER"
+##  - attr(*, ".internal.selfref")=<externalptr>
+dtNulled.prod[, offsetValue := VALUE - VALUE0]
+
+dtNulled.inte[, beginInterval := as.POSIXct(BEGIN_INTERVAL_TIME, format="%Y-%m-%d %H:%M:%S")]
+dtNulled.inte[, endInterval := as.POSIXct(END_INTERVAL_TIME, format="%Y-%m-%d %H:%M:%S")]
+str(dtNulled.inte)
+## Classes ‘data.table’ and 'data.frame':  232897 obs. of  10 variables:
+##  $ INSTANCE_NUMBER    : int  1 2 1 2 1 2 1 2 1 2 ...
+##  $ STAT_NAME          : chr  "ADG parselock X get attempts" "ADG parselock X get attempts" "ADG parselock X get successes" "ADG parselock X get successes" ...
+##  $ BEGIN_INTERVAL_TIME: chr  "2019-08-22 00:00:05" "2019-08-22 00:00:05" "2019-08-22 00:00:05" "2019-08-22 00:00:05" ...
+##  $ END_INTERVAL_TIME  : chr  "2019-08-22 01:00:22" "2019-08-22 01:00:22" "2019-08-22 01:00:22" "2019-08-22 01:00:22" ...
+##  $ SNAP_ID            : int  20070 20070 20070 20070 20070 20070 20070 20070 20070 20070 ...
+##  $ VALUE              : num  0 0 0 0 4727784 ...
+##  $ VALUE0             : num  0 0 0 0 4727784 ...
+##  $ offsetValue        : num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ beginInterval      : POSIXct, format: "2019-08-22 00:00:05" "2019-08-22 00:00:05" "2019-08-22 00:00:05" "2019-08-22 00:00:05" ...
+##  $ endInterval        : POSIXct, format: "2019-08-22 01:00:22" "2019-08-22 01:00:22" "2019-08-22 01:00:22" "2019-08-22 01:00:22" ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "SNAP_ID" "STAT_NAME" "INSTANCE_NUMBER"
+
+dtNulled.prod[, beginInterval := as.POSIXct(BEGIN_INTERVAL_TIME, format="%Y-%m-%d %H:%M:%S")]
+dtNulled.prod[, endInterval := as.POSIXct(END_INTERVAL_TIME, format="%Y-%m-%d %H:%M:%S")]
+str(dtNulled.prod)
+## Classes ‘data.table’ and 'data.frame':  239008 obs. of  10 variables:
+##  $ INSTANCE_NUMBER    : int  1 2 1 2 1 2 1 2 1 2 ...
+##  $ STAT_NAME          : chr  "ADG parselock X get attempts" "ADG parselock X get attempts" "ADG parselock X get successes" "ADG parselock X get successes" ...
+##  $ BEGIN_INTERVAL_TIME: chr  "2019-08-22 00:00:14" "2019-08-22 00:00:14" "2019-08-22 00:00:14" "2019-08-22 00:00:14" ...
+##  $ END_INTERVAL_TIME  : chr  "2019-08-22 01:00:16" "2019-08-22 01:00:18" "2019-08-22 01:00:16" "2019-08-22 01:00:18" ...
+##  $ SNAP_ID            : int  35567 35567 35567 35567 35567 35567 35567 35567 35567 35567 ...
+##  $ VALUE              : num  0.0 0.0 0.0 0.0 6.7e+07 ...
+##  $ VALUE0             : num  0.0 0.0 0.0 0.0 6.7e+07 ...
+##  $ offsetValue        : num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ beginInterval      : POSIXct, format: "2019-08-22 00:00:14" "2019-08-22 00:00:14" "2019-08-22 00:00:14" "2019-08-22 00:00:14" ...
+##  $ endInterval        : POSIXct, format: "2019-08-22 01:00:16" "2019-08-22 01:00:18" "2019-08-22 01:00:16" "2019-08-22 01:00:18" ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "SNAP_ID" "STAT_NAME" "INSTANCE_NUMBER"
+
+
+dtNulled.inte[, snapHour := as.POSIXct(round(beginInterval, units="hours"))]
+dtNulled.prod[, snapHour := as.POSIXct(round(beginInterval, units="hours"))]
+
+####################################################################################
+## Überprüfen, ob Intervallbeginn und -ende bei beiden Instanzen übereinstimmen
+####################################################################################
+
+m.inte <- merge(
+   unique(dtNulled.inte[INSTANCE_NUMBER == 1, list(SNAP_ID, beginInterval, endInterval)]),
+   unique(dtNulled.inte[INSTANCE_NUMBER == 2, list(SNAP_ID, beginInterval, endInterval)]),
+   by=c("SNAP_ID"), all=T, suffixes=c("_1","_2"), incomparables=NA)
+
+m.inte
+##      SNAP_ID     beginInterval_1       endInterval_1     beginInterval_2       endInterval_2
+##   1:   20070 2019-08-22 00:00:05 2019-08-22 01:00:22 2019-08-22 00:00:05 2019-08-22 01:00:22
+##   2:   20071 2019-08-22 01:00:22 2019-08-22 02:00:46 2019-08-22 01:00:22 2019-08-22 02:00:46
+##   3:   20072 2019-08-22 02:00:46 2019-08-22 03:00:40 2019-08-22 02:00:46 2019-08-22 03:00:39
+##   4:   20073 2019-08-22 03:00:40 2019-08-22 04:00:21 2019-08-22 03:00:39 2019-08-22 04:00:21
+##   5:   20074 2019-08-22 04:00:21 2019-08-22 05:00:14 2019-08-22 04:00:21 2019-08-22 05:00:14
+##  ---                                                                                        
+## 168:   20241 2019-08-29 03:00:19 2019-08-29 04:00:01 2019-08-29 03:00:19 2019-08-29 04:00:01
+## 169:   20242 2019-08-29 04:00:01 2019-08-29 05:00:15 2019-08-29 04:00:01 2019-08-29 05:00:15
+## 170:   20243 2019-08-29 05:00:15 2019-08-29 06:00:11 2019-08-29 05:00:15 2019-08-29 06:00:11
+## 171:   20244 2019-08-29 06:00:11 2019-08-29 07:00:34 2019-08-29 06:00:11 2019-08-29 07:00:34
+## 172:   20245 2019-08-29 07:00:34 2019-08-29 08:00:39 2019-08-29 07:00:34 2019-08-29 08:00:39
+
+m.inte[, deltaBeginn := abs(as.numeric(beginInterval_1 - beginInterval_2))]
+m.inte[, deltaEnd := abs(as.numeric(endInterval_1 - endInterval_2))]
+
+m.inte[, table(deltaBeginn)]
+## deltaBeginn
+##   0   1 
+## 140  31
+
+m.inte[, table(deltaEnd)]
+## deltaEnd
+##   0   1 
+## 141  30
+
+## --> Beginn und Ende der Snapshotintervalle unterscheiden sich bei der CUS DB Inte auf den
+##     beiden Instanzen um höchstens 1 Sekunde
+
+
+m.prod <- merge(
+   unique(dtNulled.prod[INSTANCE_NUMBER == 1, list(SNAP_ID, beginInterval, endInterval)]),
+   unique(dtNulled.prod[INSTANCE_NUMBER == 2, list(SNAP_ID, beginInterval, endInterval)]),
+   by=c("SNAP_ID"), all=T, suffixes=c("_1","_2"), incomparables=NA)
+
+m.prod
+##      SNAP_ID     beginInterval_1       endInterval_1     beginInterval_2       endInterval_2
+##   1:   35567 2019-08-22 00:00:14 2019-08-22 01:00:16 2019-08-22 00:00:14 2019-08-22 01:00:18
+##   2:   35568 2019-08-22 01:00:16 2019-08-22 02:00:01 2019-08-22 01:00:18 2019-08-22 02:00:01
+##   3:   35569 2019-08-22 02:00:01 2019-08-22 03:00:07 2019-08-22 02:00:01 2019-08-22 03:00:06
+##   4:   35570 2019-08-22 03:00:07 2019-08-22 04:00:20 2019-08-22 03:00:06 2019-08-22 04:00:20
+##   5:   35571 2019-08-22 04:00:20 2019-08-22 05:00:16 2019-08-22 04:00:20 2019-08-22 05:00:15
+##  ---                                                                                        
+## 172:   35738 2019-08-29 03:00:48 2019-08-29 04:00:07 2019-08-29 03:00:48 2019-08-29 04:00:07
+## 173:   35739 2019-08-29 04:00:07 2019-08-29 05:00:15 2019-08-29 04:00:07 2019-08-29 05:00:15
+## 174:   35740 2019-08-29 05:00:15 2019-08-29 06:00:02 2019-08-29 05:00:15 2019-08-29 06:00:02
+## 175:   35741 2019-08-29 06:00:02 2019-08-29 07:00:08 2019-08-29 06:00:02 2019-08-29 07:00:08
+## 176:   35742 2019-08-29 07:00:08 2019-08-29 08:00:20 2019-08-29 07:00:08 2019-08-29 08:00:20
+
+m.prod[, deltaBeginn := abs(as.numeric(beginInterval_1 - beginInterval_2))]
+m.prod[, deltaEnd := abs(as.numeric(endInterval_1 - endInterval_2))]
+
+m.prod[, table(deltaBeginn)]
+## deltaBeginn
+##   0   1   2  12 
+## 115  55   5   1
+
+m.prod[, table(deltaEnd)]
+deltaEnd
+##   0   1   2 
+## 116  55   5
+
+## --> Beginn und Ende der Snapshotintervalle unterscheiden sich bei der CUS DB Prod auf den
+##     beiden Instanzen um höchstens 12 Sekunden
+
+
+dtNulled.inte1 <- dtNulled.inte[, list("minInterval" = min(beginInterval), "maxInterval" = max(endInterval), "sumValue" = sum(offsetValue)),
+   by = list(SNAP_ID, STAT_NAME, snapHour)]
+str(dtNulled.inte1)
+## Classes ‘data.table’ and 'data.frame':  116788 obs. of  6 variables:
+##  $ SNAP_ID    : int  20070 20070 20070 20070 20070 20070 20070 20070 20070 20070 ...
+##  $ STAT_NAME  : chr  "ADG parselock X get attempts" "ADG parselock X get successes" "Batched IO (bound) vector count" "Batched IO (full) vector count" ...
+##  $ snapHour   : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" ...
+##  $ minInterval: POSIXct, format: "2019-08-22 00:00:05" "2019-08-22 00:00:05" "2019-08-22 00:00:05" "2019-08-22 00:00:05" ...
+##  $ maxInterval: POSIXct, format: "2019-08-22 01:00:22" "2019-08-22 01:00:22" "2019-08-22 01:00:22" "2019-08-22 01:00:22" ...
+##  $ sumValue   : num  0 0 0 0 0 0 0 0 0 0 ...
+##  - attr(*, "sorted")= chr  "SNAP_ID" "STAT_NAME" "snapHour"
+##  - attr(*, ".internal.selfref")=<externalptr>
+
+
+dtNulled.prod1 <- dtNulled.prod[, list("minInterval" = min(beginInterval), "maxInterval" = max(endInterval), "sumValue" = sum(offsetValue)),
+   by = list(SNAP_ID, STAT_NAME, snapHour)]
+str(dtNulled.prod1)
+## Classes ‘data.table’ and 'data.frame':  119504 obs. of  6 variables:
+##  $ SNAP_ID    : int  35567 35567 35567 35567 35567 35567 35567 35567 35567 35567 ...
+##  $ STAT_NAME  : chr  "ADG parselock X get attempts" "ADG parselock X get successes" "Batched IO (bound) vector count" "Batched IO (full) vector count" ...
+##  $ snapHour   : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" ...
+##  $ minInterval: POSIXct, format: "2019-08-22 00:00:14" "2019-08-22 00:00:14" "2019-08-22 00:00:14" "2019-08-22 00:00:14" ...
+##  $ maxInterval: POSIXct, format: "2019-08-22 01:00:18" "2019-08-22 01:00:18" "2019-08-22 01:00:18" "2019-08-22 01:00:18" ...
+##  $ sumValue   : num  0 0 0 0 0 0 0 0 0 0 ...
+##  - attr(*, "sorted")= chr  "SNAP_ID" "STAT_NAME" "snapHour"
+##  - attr(*, ".internal.selfref")=<externalptr> 
+
+## Intervalllängen überprüfen
+dtNulled.inte1[, summary(as.numeric(maxInterval - minInterval, units="secs"))]
+   ## Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   ## 3540    3587    3602    3600    3617    3640
+
+dtNulled.prod1[, summary(as.numeric(maxInterval - minInterval, units="secs"))]
+   ## Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   ## 3115    3602    3605    3598    3607    3619
+
+# Welche Intervalle bei dtNulled.prod1 sind < 3540 Sekunden ?
+dtNulled.prod1.shortIntervals <- dtNulled.prod1[as.numeric(maxInterval - minInterval, units="secs") < 3540, ]
+unique(dtNulled.prod1.shortIntervals[, list(SNAP_ID, snapHour)])
+##    SNAP_ID            snapHour
+## 1:   35736 2019-08-29 01:00:00
+
+## -> Dieses und folgende Intervall nicht berücksichtigen. Grund ist der Neustart der DB; dabei werden die Statistiken wieder auf 0 gesetzt.
+
+
+dtNulled <- merge(
+   dtNulled.inte1[snapHour < as.POSIXct('2019-08-29 01:00:00', format='%Y-%m-%d %H:%M:%S'), list(STAT_NAME, snapHour, sumValue)],
+   dtNulled.prod1[snapHour < as.POSIXct('2019-08-29 01:00:00', format='%Y-%m-%d %H:%M:%S'), list(STAT_NAME, snapHour, sumValue)],
+   by=c("snapHour", "STAT_NAME"), all=T, suffixes=c("_I", "_P"), incomparables=NA)
+
+str(dtNulled)
+## Classes ‘data.table’ and 'data.frame':  114751 obs. of  4 variables:
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" ...
+##  $ STAT_NAME : chr  "ADG parselock X get attempts" "ADG parselock X get successes" "Batched IO (bound) vector count" "Batched IO (full) vector count" ...
+##  $ sumValue_I: num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ sumValue_P: num  0 0 0 0 0 0 0 0 0 0 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "snapHour" "STAT_NAME"
+
+setkeyv(dtNulled, c("snapHour", "STAT_NAME"))
+
+dtNulled.selectForLoad <- dtNulled[ STAT_NAME %in% list(
+  'db block changes',
+  'enqueue requests',
+  'execute count',
+  'global enqueue gets async',
+  'global enqueue gets sync',
+  'parse count (total)',
+  'user calls',
+  'application wait time',
+  'cluster wait time',
+  'user I/O wait time',
+  'concurrency wait time'), ]
+
+str(unique(dtNulled.selectForLoad[,STAT_NAME]))
+##  chr [1:11] "application wait time" "cluster wait time" "concurrency wait time" "db block changes" "enqueue requests" "execute count" "global enqueue gets async" "global enqueue gets sync" ...
+
+library(reshape2)
+dtNulled.selectForLoad.melt <- melt(dtNulled.selectForLoad, id=c("snapHour", "STAT_NAME"), measured=c("sumValue_I","sumValue_P"))
+str(dtNulled.selectForLoad.melt)
+## Classes ‘data.table’ and 'data.frame':  3718 obs. of  4 variables:
+##  $ snapHour : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" ...
+##  $ STAT_NAME: chr  "application wait time" "cluster wait time" "concurrency wait time" "db block changes" ...
+##  $ variable : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ value    : num  0 0 0 0 0 0 0 0 0 0 ...
+##  - attr(*, ".internal.selfref")=<externalptr>
+
+dtNulled.selectForLoad.melt[, list(min(snapHour), max(snapHour))]
+##            V1         V2
+## 1: 2019-08-22 2019-08-29
+
+
+setkeyv(dtNulled.selectForLoad.melt, c("snapHour", "STAT_NAME", "variable")) 
+
+str(dtNulled.selectForLoad.melt)
+## Classes ‘data.table’ and 'data.frame':  3718 obs. of  4 variables:
+##  $ snapHour : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" ...
+##  $ STAT_NAME: chr  "application wait time" "application wait time" "cluster wait time" "cluster wait time" ...
+##  $ variable : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 2 1 2 1 2 1 2 1 2 ...
+##  $ value    : num  0 0 0 0 0 0 0 0 0 0 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "snapHour" "STAT_NAME" "variable"
+                                    
+dtNulled.selectForLoad.melt.diff <- dtNulled.selectForLoad.melt[, list(snapHour, "deltaValue" = diff(value)), by=list(STAT_NAME, variable)]
+
+## Warnmeldung:
+## In `[.data.table`(dtNulled.selectForLoad.melt, , list(snapHour, deltaValue = diff(value)),  :
+## Column 2 of result for group 1 is length 168 but the longest column in this result is 169. Recycled leaving remainder of 1 items.
+## This warning is once only for the first group with this issue.
+
+str(dtNulled.selectForLoad.melt.diff)
+## Classes ‘data.table’ and 'data.frame':  3718 obs. of  4 variables:
+##  $ STAT_NAME : chr  "application wait time" "application wait time" "application wait time" "application wait time" ...
+##  $ variable  : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 01:00:00" "2019-08-22 02:00:00" "2019-08-22 03:00:00" ...
+##  $ deltaValue: num  69027 70267 175935 140390 28059 ...
+## - attr(*, ".internal.selfref")=<externalptr>
+
+setkeyv(dtNulled.selectForLoad.melt.diff, c("snapHour", "STAT_NAME", "variable"))
+
+tail(dtNulled.selectForLoad.melt.diff[ STAT_NAME=="application wait time", ], 2)
+
+##                STAT_NAME   variable   snapHour deltaValue
+## 1: application wait time sumValue_I 2019-08-29      69027
+## 2: application wait time sumValue_P 2019-08-29      50847
+
+head(dtNulled.selectForLoad.melt.diff[ STAT_NAME=="application wait time", ], 2)
+##                STAT_NAME   variable   snapHour deltaValue
+## 1: application wait time sumValue_I 2019-08-22      69027
+## 2: application wait time sumValue_P 2019-08-22      50847                                    
+
+## Wegen Recycling beim Diffen werden alle deltaValue für snapHour 2019-08-29 00:00:00 auf NA gesetzt.
+dtNulled.selectForLoad.melt.diff[snapHour == as.POSIXct("2019-08-29 00:00:00", format="%Y-%m-%d %H:%M:%S"), deltaValue := NA]
+
+## Summary der Delta-Werte
+library(broom)
+
+summarySystatByPlatform.diff <- dtNulled.selectForLoad.melt.diff[, glance(summary(deltaValue)), by=list(STAT_NAME, variable)]
+setkeyv(summarySystatByPlatform.diff, c("STAT_NAME", "variable"))
+summarySystatByPlatform.diff
+##                     STAT_NAME   variable  minimum          q1     median        mean          q3    maximum na
+##  1:     application wait time sumValue_I     6820    11569.75    16227.0   168779.16    71340.00    4015674  9
+##  2:     application wait time sumValue_P     7788    18907.50    25639.0    66438.15    50517.75    1868934  1
+##  3:         cluster wait time sumValue_I    91997   577644.00   903754.5  1101479.02  1353930.75   22815546  9
+##  4:         cluster wait time sumValue_P    39150   189797.25   273147.0   272672.98   365832.75     533247  1
+##  5:     concurrency wait time sumValue_I     8133    40932.25    58263.0   441893.76    95188.25   16163233  9
+##  6:     concurrency wait time sumValue_P     7480    81408.50   157326.5   165464.41   219881.50     492176  1
+##  7:          db block changes sumValue_I 14336971 38069356.00 52784612.0 60344663.74 61718408.75 1853743142  9
+##  8:          db block changes sumValue_P  8794902 34457248.00 51516647.0 46731356.10 59315800.25   80386952  1
+##  9:          enqueue requests sumValue_I  1180925  3170619.25  4281665.5  4676407.58  5070251.25   97621707  9
+## 10:          enqueue requests sumValue_P  1479446  5750198.25  8317312.0  7825687.60  9993156.25   12814288  1
+## 11:             execute count sumValue_I  1398525  8467528.00 11723310.5 13327061.09 13937988.75  285795797  9
+## 12:             execute count sumValue_P  3122510 12144023.00 15634805.5 14957404.51 17857873.00   36473554  1
+## 13: global enqueue gets async sumValue_I    20590    22922.00    26359.0    32686.55    32514.75     666636  9
+## 14: global enqueue gets async sumValue_P    33066    52297.75    54976.5    59179.64    62303.50     140630  1
+## 15:  global enqueue gets sync sumValue_I  9067894 38138685.25 53163377.0 58077580.76 60769523.50 1262391392  9
+## 16:  global enqueue gets sync sumValue_P 18799171 53381747.75 67902971.5 65347440.51 76698915.00  103743765  1
+## 17:       parse count (total) sumValue_I  1318173  8289131.50 11477439.0 12953890.38 13642729.50  274865848  9
+## 18:       parse count (total) sumValue_P  2913818 11893820.25 15319448.5 14598819.21 17463515.00   36291507  1
+## 19:        user I/O wait time sumValue_I   213118   387249.75   509469.5   693050.51   689419.00   17286651  9
+## 20:        user I/O wait time sumValue_P   283315   805661.25  1124610.0  1318070.51  1639196.00    3682449  1
+## 21:                user calls sumValue_I  4277788 19086851.00 26500629.5 29016754.90 30242376.50  630857939  9
+## 22:                user calls sumValue_P  9704162 27143782.00 34521826.5 32979582.08 38550265.25   53104654  1
+
+
+#compute the interquartile range IQR
+summarySystatByPlatform.diff[, IQR := q3 - q1]
+summarySystatByPlatform.diff
+##                     STAT_NAME   variable  minimum          q1     median        mean          q3    maximum na         IQR
+##  1:     application wait time sumValue_I     6820    11569.75    16227.0   168779.16    71340.00    4015674  9    59770.25
+##  2:     application wait time sumValue_P     7788    18907.50    25639.0    66438.15    50517.75    1868934  1    31610.25
+##  3:         cluster wait time sumValue_I    91997   577644.00   903754.5  1101479.02  1353930.75   22815546  9   776286.75
+##  4:         cluster wait time sumValue_P    39150   189797.25   273147.0   272672.98   365832.75     533247  1   176035.50
+##  5:     concurrency wait time sumValue_I     8133    40932.25    58263.0   441893.76    95188.25   16163233  9    54256.00
+##  6:     concurrency wait time sumValue_P     7480    81408.50   157326.5   165464.41   219881.50     492176  1   138473.00
+##  7:          db block changes sumValue_I 14336971 38069356.00 52784612.0 60344663.74 61718408.75 1853743142  9 23649052.75
+##  8:          db block changes sumValue_P  8794902 34457248.00 51516647.0 46731356.10 59315800.25   80386952  1 24858552.25
+##  9:          enqueue requests sumValue_I  1180925  3170619.25  4281665.5  4676407.58  5070251.25   97621707  9  1899632.00
+## 10:          enqueue requests sumValue_P  1479446  5750198.25  8317312.0  7825687.60  9993156.25   12814288  1  4242958.00
+## 11:             execute count sumValue_I  1398525  8467528.00 11723310.5 13327061.09 13937988.75  285795797  9  5470460.75
+## 12:             execute count sumValue_P  3122510 12144023.00 15634805.5 14957404.51 17857873.00   36473554  1  5713850.00
+## 13: global enqueue gets async sumValue_I    20590    22922.00    26359.0    32686.55    32514.75     666636  9     9592.75
+## 14: global enqueue gets async sumValue_P    33066    52297.75    54976.5    59179.64    62303.50     140630  1    10005.75
+## 15:  global enqueue gets sync sumValue_I  9067894 38138685.25 53163377.0 58077580.76 60769523.50 1262391392  9 22630838.25
+## 16:  global enqueue gets sync sumValue_P 18799171 53381747.75 67902971.5 65347440.51 76698915.00  103743765  1 23317167.25
+## 17:       parse count (total) sumValue_I  1318173  8289131.50 11477439.0 12953890.38 13642729.50  274865848  9  5353598.00
+## 18:       parse count (total) sumValue_P  2913818 11893820.25 15319448.5 14598819.21 17463515.00   36291507  1  5569694.75
+## 19:        user I/O wait time sumValue_I   213118   387249.75   509469.5   693050.51   689419.00   17286651  9   302169.25
+## 20:        user I/O wait time sumValue_P   283315   805661.25  1124610.0  1318070.51  1639196.00    3682449  1   833534.75
+## 21:                user calls sumValue_I  4277788 19086851.00 26500629.5 29016754.90 30242376.50  630857939  9 11155525.50
+## 22:                user calls sumValue_P  9704162 27143782.00 34521826.5 32979582.08 38550265.25   53104654  1 11406483.25
+## Do some statistical tests
+
+library(stats)
+
+waitclasses <- dtNulled.selectForLoad.melt.diff[
+  STAT_NAME %in% list('application wait time', 'cluster wait time','concurrency wait time','user I/O wait time'), ]
+
+statNames <- unique(waitclasses[, STAT_NAME])
+
+i = 1
+pval = c()
+h1 = c()       # Alternative Hypothese
+method = c()   # Methode
+wtListe = list()
+for (sName in statNames) {
+    w <- wilcox.test(deltaValue ~ variable, data=waitclasses, paired=F, na.action = na.omit, subset = waitclasses[, STAT_NAME == sName])
+    wtListe[[sName]] = w
+    pval[i] <- w[["p.value"]]
+    h1[i] <- w[["alternative"]]
+    method[i] = w[["method"]]
+    i = i + 1
+}
+
+wilcoxTest <- data.frame(statNames, pval, h1, method)
+colnames(wilcoxTest) <- c("statistik", "p.value", "alternative", "method")
+
+wilcoxTest
+##               statistik      p.value alternative                                            method
+## 1 application wait time 1.511179e-03   two.sided Wilcoxon rank sum test with continuity correction
+## 2     cluster wait time 3.792887e-38   two.sided Wilcoxon rank sum test with continuity correction
+## 3 concurrency wait time 4.289956e-13   two.sided Wilcoxon rank sum test with continuity correction
+## 4    user I/O wait time 5.923306e-25   two.sided Wilcoxon rank sum test with continuity correction
+
+## The Wilcoxon rank sum test (equivalent to the Mann-Whitney test), wiht H0: Equal Medians
+
+wtListe
+## $`application wait time`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 10716, p-value = 0.001511
+## alternative hypothesis: true location shift is not equal to 0
+
+
+## $`cluster wait time`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 24526, p-value < 2.2e-16
+## alternative hypothesis: true location shift is not equal to 0
+
+
+## $`concurrency wait time`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 7219, p-value = 4.29e-13
+## alternative hypothesis: true location shift is not equal to 0
+
+
+## $`user I/O wait time`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 4583, p-value < 2.2e-16
+## alternative hypothesis: true location shift is not equal to 0
+
+
+## Same test, but without outliers; Outliers are values outside the whiskers, i.e higher than Q3 + 1.5IQR,
+## or less than Q1 - 1.5IQR
+
+
+str(summarySystatByPlatform.diff)
+## Classes ‘data.table’ and 'data.frame':  22 obs. of  10 variables:
+##  $ STAT_NAME: chr  "application wait time" "application wait time" "cluster wait time" "cluster wait time" ...
+##  $ variable : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 2 1 2 1 2 1 2 1 2 ...
+##  $ minimum  : num  6820 7788 91997 39150 8133 ...
+##  $ q1       : num  11570 18908 577644 189797 40932 ...
+##  $ median   : num  16227 25639 903755 273147 58263 ...
+##  $ mean     : num  168779 66438 1101479 272673 441894 ...
+##  $ q3       : num  71340 50518 1353931 365833 95188 ...
+##  $ maximum  : num  4015674 1868934 22815546 533247 16163233 ...
+##  $ na       : num  9 1 9 1 9 1 9 1 9 1 ...
+##  $ IQR      : num  59770 31610 776287 176036 54256 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "STAT_NAME" "variable"
+
+
+str(dtNulled.selectForLoad.melt.diff)
+## Classes ‘data.table’ and 'data.frame':  3718 obs. of  4 variables:
+##  $ STAT_NAME : chr  "application wait time" "application wait time" "cluster wait time" "cluster wait time" ...
+##  $ variable  : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 2 1 2 1 2 1 2 1 2 ...
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" ...
+##  $ deltaValue: num  69027 50847 91997 60231 10731 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "snapHour" "STAT_NAME" "variable"
+##  - attr(*, "index")= atomic  
+##   ..- attr(*, "__STAT_NAME")= int  1 2 23 24 45 46 67 68 89 90 ...
+
+
+dtNulled.sFL.melt.diff.ext <- merge(
+   dtNulled.selectForLoad.melt.diff,
+   summarySystatByPlatform.diff,
+   by = c("STAT_NAME", "variable"), all=T, incomparables=NA)
+
+
+str(dtNulled.sFL.melt.diff.ext)
+## Classes ‘data.table’ and 'data.frame':  3718 obs. of  12 variables:
+##  $ STAT_NAME : chr  "application wait time" "application wait time" "application wait time" "application wait time" ...
+##  $ variable  : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 01:00:00" "2019-08-22 02:00:00" "2019-08-22 03:00:00" ...
+##  $ deltaValue: num  69027 70267 175935 140390 28059 ...
+##  $ minimum   : num  6820 6820 6820 6820 6820 6820 6820 6820 6820 6820 ...
+##  $ q1        : num  11570 11570 11570 11570 11570 ...
+##  $ median    : num  16227 16227 16227 16227 16227 ...
+##  $ mean      : num  168779 168779 168779 168779 168779 ...
+##  $ q3        : num  71340 71340 71340 71340 71340 ...
+##  $ maximum   : num  4015674 4015674 4015674 4015674 4015674 ...
+##  $ na        : num  9 9 9 9 9 9 9 9 9 9 ...
+##  $ IQR       : num  59770 59770 59770 59770 59770 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "STAT_NAME" "variable"
+
+
+# Subset of data without outliers; only data within boxplot whiskers
+dtNulled.sFL.melt.diff.nooutlier <- dtNulled.sFL.melt.diff.ext[ deltaValue <= q3 + 1.5 * IQR & deltaValue >= q1 - 1.5 * IQR, ]
+
+str(dtNulled.sFL.melt.diff.nooutlier)
+## Classes ‘data.table’ and 'data.frame':  3455 obs. of  12 variables:
+##  $ STAT_NAME : chr  "application wait time" "application wait time" "application wait time" "application wait time" ...
+##  $ variable  : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 01:00:00" "2019-08-22 03:00:00" "2019-08-22 04:00:00" ...
+##  $ deltaValue: num  69027 70267 140390 28059 15293 ...
+##  $ minimum   : num  6820 6820 6820 6820 6820 6820 6820 6820 6820 6820 ...
+##  $ q1        : num  11570 11570 11570 11570 11570 ...
+##  $ median    : num  16227 16227 16227 16227 16227 ...
+##  $ mean      : num  168779 168779 168779 168779 168779 ...
+##  $ q3        : num  71340 71340 71340 71340 71340 ...
+##  $ maximum   : num  4015674 4015674 4015674 4015674 4015674 ...
+##  $ na        : num  9 9 9 9 9 9 9 9 9 9 ...
+##  $ IQR       : num  59770 59770 59770 59770 59770 ...
+##  - attr(*, "sorted")= chr  "STAT_NAME" "variable"
+##  - attr(*, ".internal.selfref")=<externalptr> 
+
+
+waitclasses.no <- dtNulled.sFL.melt.diff.nooutlier[
+  STAT_NAME %in% list('application wait time', 'cluster wait time','concurrency wait time','user I/O wait time'), ]
+
+i = 1
+pval = c()
+h1 = c()       # Alternative Hypothese
+method = c()   # Methode
+wtListe.no = list()
+for (sName in statNames) {
+    w <- wilcox.test(deltaValue ~ variable, data=waitclasses.no, paired=F, na.action = na.omit, subset = waitclasses.no[, STAT_NAME == sName])
+    wtListe.no[[sName]] = w
+    pval[i] <- w[["p.value"]]
+    h1[i] <- w[["alternative"]]
+    method[i] = w[["method"]]
+    i = i + 1
+}
+
+wilcoxTest.no <- data.frame(statNames, pval, h1, method)
+colnames(wilcoxTest.no) <- c("statistik", "p.value", "alternative", "method")
+
+wilcoxTest.no
+##               statistik      p.value alternative                                            method
+## 1 application wait time 2.393673e-07   two.sided Wilcoxon rank sum test with continuity correction
+## 2     cluster wait time 6.211580e-38   two.sided Wilcoxon rank sum test with continuity correction
+## 3 concurrency wait time 5.054422e-25   two.sided Wilcoxon rank sum test with continuity correction
+## 4    user I/O wait time 6.777930e-29   two.sided Wilcoxon rank sum test with continuity correction
+ 
+wtListe.no
+## $`application wait time`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 6585, p-value = 2.394e-07
+## alternative hypothesis: true location shift is not equal to 0
+
+
+## $`cluster wait time`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 24358, p-value < 2.2e-16
+## alternative hypothesis: true location shift is not equal to 0
+
+
+## $`concurrency wait time`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 3332, p-value < 2.2e-16
+## alternative hypothesis: true location shift is not equal to 0
+
+
+## $`user I/O wait time`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 2988, p-value < 2.2e-16
+## alternative hypothesis: true location shift is not equal to 0
+
+
+## ---> Wilcox rank sum test without outliers confirms findings of test with outliers included
+
+
+## Load statistics for database load
+statisticsForDBLoad <- dtNulled.sFL.melt.diff.ext[ STAT_NAME %in% list(
+ "db block changes", 
+ "enqueue requests", 
+ "execute count", 
+ "global enqueue gets async", 
+ "global enqueue gets sync" , 
+ "parse count (total)", 
+ "user calls"), ]
+
+str(statisticsForDBLoad)
+## Classes ‘data.table’ and 'data.frame':  2366 obs. of  12 variables:
+##  $ STAT_NAME : chr  "db block changes" "db block changes" "db block changes" "db block changes" ...
+##  $ variable  : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 01:00:00" "2019-08-22 02:00:00" "2019-08-22 03:00:00" ...
+##  $ deltaValue: num  20715753 15183567 44063554 35422981 19752353 ...
+##  $ minimum   : num  14336971 14336971 14336971 14336971 14336971 ...
+##  $ q1        : num  38069356 38069356 38069356 38069356 38069356 ...
+##  $ median    : num  52784612 52784612 52784612 52784612 52784612 ...
+##  $ mean      : num  60344664 60344664 60344664 60344664 60344664 ...
+##  $ q3        : num  61718409 61718409 61718409 61718409 61718409 ...
+##  $ maximum   : num  1.85e+09 1.85e+09 1.85e+09 1.85e+09 1.85e+09 ...
+##  $ na        : num  9 9 9 9 9 9 9 9 9 9 ...
+##  $ IQR       : num  23649053 23649053 23649053 23649053 23649053 ...
+##  - attr(*, "sorted")= chr  "STAT_NAME" "variable"
+##  - attr(*, ".internal.selfref")=<externalptr>
+
+statNames <- unique(statisticsForDBLoad[, STAT_NAME])
+
+## Wilcox rank sum test DB load statistics, with outliers included
+## H0: Q50(Inte) >= Q50(Prod), i.e. higher DB load on Inte
+i = 1
+pval = c()
+h1 = c()       # Alternative Hypothese
+method = c()   # Methode
+wtListe.forDBLoad = list()
+for (sName in statNames) {
+    w <- wilcox.test(deltaValue ~ variable, data=statisticsForDBLoad, paired=F, alternative = "less", na.action = na.omit, subset = statisticsForDBLoad[, STAT_NAME == sName])
+    wtListe.forDBLoad[[sName]] = w
+    pval[i] <- w[["p.value"]]
+    h1[i] <- w[["alternative"]]
+    method[i] = w[["method"]]
+    i = i + 1
+}
+
+wilcoxTest.forDBLoad <- data.frame(statNames, pval, h1, method)
+colnames(wilcoxTest.forDBLoad) <- c("statistik", "p.value", "alternative", "method")
+
+wilcoxTest.forDBLoad
+##                   statistik      p.value alternative                                            method
+## 1          db block changes 9.130831e-01        less Wilcoxon rank sum test with continuity correction
+## 2          enqueue requests 5.531384e-30        less Wilcoxon rank sum test with continuity correction
+## 3             execute count 1.764491e-12        less Wilcoxon rank sum test with continuity correction
+## 4 global enqueue gets async 4.487811e-51        less Wilcoxon rank sum test with continuity correction
+## 5  global enqueue gets sync 6.010289e-13        less Wilcoxon rank sum test with continuity correction
+## 6       parse count (total) 3.136130e-12        less Wilcoxon rank sum test with continuity correction
+## 7                user calls 9.099170e-14        less Wilcoxon rank sum test with continuity correction
+ 
+wtListe.forDBLoad
+## $`db block changes`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 14607, p-value = 0.9131
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`enqueue requests`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 3726, p-value < 2.2e-16
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`execute count`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 7469, p-value = 1.764e-12
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`global enqueue gets async`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 574, p-value < 2.2e-16
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`global enqueue gets sync`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 7340, p-value = 6.01e-13
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`parse count (total)`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 7539, p-value = 3.136e-12
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`user calls`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 7120, p-value = 9.099e-14
+## alternative hypothesis: true location shift is less than 0
+
+
+## For all DB load statistics H0 can be discarded in favour of H1, i.e. Q50(Inte) < Q50(Prod).
+## The exception is "db block changes". Let's test if for H0: Q50(Inte) == Q50(Prod)
+
+
+statisticsForDBLoad.no <- dtNulled.sFL.melt.diff.nooutlier[
+  STAT_NAME %in% statNames, ]
+unique(statisticsForDBLoad.no[, STAT_NAME])
+## [1] "db block changes" "enqueue requests" "execute count" "global enqueue gets async" "global enqueue gets sync" "parse count (total)" "user calls"
+
+## Wilcox rank sum test DB load statistics, without outliers
+## H0: Q50(Inte) >= Q50(Prod), i.e. higher DB load on Inte
+i = 1
+pval = c()
+h1 = c()       # Alternative Hypothese
+method = c()   # Methode
+wtListe.forDBLoad.no = list()
+for (sName in statNames) {
+    w <- wilcox.test(deltaValue ~ variable, data=statisticsForDBLoad.no, paired=F, alternative = "less", na.action = na.omit, subset = statisticsForDBLoad.no[, STAT_NAME == sName])
+    wtListe.forDBLoad.no[[sName]] = w
+    pval[i] <- w[["p.value"]]
+    h1[i] <- w[["alternative"]]
+    method[i] = w[["method"]]
+    i = i + 1
+}
+
+wilcoxTest.forDBLoad.no <- data.frame(statNames, pval, h1, method)
+colnames(wilcoxTest.forDBLoad.no) <- c("statistik", "p.value", "alternative", "method")
+
+wilcoxTest.forDBLoad.no
+##                   statistik      p.value alternative                                            method
+## 1          db block changes 8.976063e-01        less Wilcoxon rank sum test with continuity correction
+## 2          enqueue requests 9.762997e-31        less Wilcoxon rank sum test with continuity correction
+## 3             execute count 2.290050e-17        less Wilcoxon rank sum test with continuity correction
+## 4 global enqueue gets async 1.118215e-51        less Wilcoxon rank sum test with continuity correction
+## 5  global enqueue gets sync 2.300279e-13        less Wilcoxon rank sum test with continuity correction
+## 6       parse count (total) 1.603491e-16        less Wilcoxon rank sum test with continuity correction
+## 7                user calls 1.301026e-14        less Wilcoxon rank sum test with continuity correction
+ 
+wtListe.forDBLoad.no
+## $`db block changes`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 14439, p-value = 0.8976
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`enqueue requests`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 3558, p-value < 2.2e-16
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`execute count`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 5503, p-value < 2.2e-16
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`global enqueue gets async`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 35, p-value < 2.2e-16
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`global enqueue gets sync`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 7172, p-value = 2.3e-13
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`parse count (total)`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 5738, p-value < 2.2e-16
+## alternative hypothesis: true location shift is less than 0
+
+
+## $`user calls`
+
+##         Wilcoxon rank sum test with continuity correction
+
+## data:  deltaValue by variable
+## W = 6797, p-value = 1.301e-14
+## alternative hypothesis: true location shift is less than 0
+
+## --> Confirms findings with outliers included.
+
+
+
+library(ggplot2)
+
+myTheme = theme(
+##  aspect.ratio = 0.8,
+##  plot.margin = margin(c(0.5, 1, 0.5, 1), "cm"),
+  plot.title=element_text(size = 28, face="bold"),
+  title = element_text(size = 24),
+  axis.title.x = element_text(size = 24),
+  axis.text.x = element_text(size = 24),
+  axis.title.y = element_text(size = 24),
+  axis.text.y = element_text(size = 24),
+  legend.title = element_text(size = 24, face="bold"),
+  legend.text = element_text(size = 24)
+)
+
+
+## application wait time
+p_awt <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "application wait time", ])
+p_awt1 <- p_awt + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_awt2 <- p_awt1 +
+    scale_y_continuous(limits = c(0,1e5), labels = scales::comma_format(big.mark="'"))
+p_awt3 <- p_awt2 +
+    labs(title="System Stat application wait time, 22.8.2019 00:00 bis 29.8.2019 00:00 CEST") +
+    ylab("[1/100 Sekunden]") +xlab("")
+p_awt4 <- p_awt3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_awt5 <- p_awt4 + myTheme
+
+## ggsave(plot=p_awt5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.application_wait_time2.png")
+
+pause()
+
+
+## cluster wait time
+p_clwt <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "cluster wait time", ])
+p_clwt1 <- p_clwt + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable),  stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_clwt2 <- p_clwt1 +
+    scale_y_continuous(limits = c(0,3e6), labels = scales::comma_format(big.mark="'"))
+p_clwt3 <- p_clwt2 +
+    labs(title="System Stat cluster wait time, \n22.8. bis 29.8.2019") +
+    ylab("[1/100 Sekunden]")
+p_clwt4 <- p_clwt3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_clwt5 <-p_clwt4 + myTheme
+
+## ggsave(plot=p_clwt5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.cluster_wait_time2.png")
+
+
+pause()
+
+## concurrency wait time
+p_ccwt <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "concurrency wait time", ])
+p_ccwt1 <- p_ccwt + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
+p_ccwt2 <- p_ccwt1 +
+    scale_y_continuous(limits = c(0,1e6), labels = scales::comma_format(big.mark="'"))
+p_ccwt3 <- p_ccwt2 +
+    labs(title="System Stat concurrency wait time, 22.8.2019 00:00 bis 29.8.2019 00:00 CEST") +
+    ylab("[1/100 Sekunden]")
+p_ccwt4 <- p_ccwt3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_ccwt5 <- p_ccwt4 + myTheme
+
+## ggsave(plot=p_ccwt5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.concurrency_wait_time2.png")
+
+pause()
+
+
+## user I/O wait time
+p_uiowt <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "user I/O wait time", ])
+p_uiowt1 <- p_uiowt + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
+p_uiowt2 <- p_uiowt1 +
+    scale_y_continuous(limits = c(0,5e6), labels = scales::comma_format(big.mark="'"))
+p_uiowt3 <- p_uiowt2 +
+    labs(title="System Stat user I/O wait time, 22.8.2019 00:00 bis 29.8.2019 00:00 CEST") +
+    ylab("[1/100 Sekunden]")
+p_uiowt4 <- p_uiowt3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_uiowt5 <- p_uiowt4 + myTheme
+
+## ggsave(plot=p_uiowt5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.userio_wait_time2.png")
+
+pause()
+
+
+library(grid)
+
+grid.newpage()
+layout <- matrix(NA,2,2)
+
+pushViewport(viewport(layout=grid.layout(nrow(layout), ncol(layout))))
+pushViewport(viewport(layout=grid.layout(nrow(layout), ncol(layout))))
+pushViewport(viewport(layout=grid.layout(nrow(layout), ncol(layout))))
+pushViewport(viewport(layout=grid.layout(nrow(layout), ncol(layout))))
+
+print(p_awt4, vp=viewport(layout.pos.row=1, layout.pos.col=1))
+print(p_clwt4, vp=viewport(layout.pos.row=1, layout.pos.col=2))
+print(p_ccwt4, vp=viewport(layout.pos.row=2, layout.pos.col=1))
+print(p_uiowt4, vp=viewport(layout.pos.row=2, layout.pos.col=2))
+
+pause()
+
+
+rmlist <- ls(pattern="^p_[a-z]+[0-9]?$")
+rm(list=rmlist)
+
+## Lastindikatoren
+## ------------------------------------------------------
+## db block changes
+## enqueue requests
+## execute count
+## global enqueue gets async + global enqueue gets sync
+## parse count (total))
+## user calls
+
+
+## db block changes
+p_dbbcx <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "db block changes", ])
+p_dbbcx1 <- p_dbbcx + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
+p_dbbcx2 <- p_dbbcx1 +
+    scale_y_continuous(limits = c(0,1e8), labels = scales::comma_format(big.mark="'"))
+p_dbbcx3 <- p_dbbcx2 +
+    labs(title="System Stat db block changes, 22.8.2019 00:00 bis 29.8.2019 00:00 CEST") +
+    ylab("[Anzahl DB Block Changes]")
+p_dbbcx4 <- p_dbbcx3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_dbbx5 <- p_dbbcx4
+
+## ggsave(plot=p_dbbcx5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.data_block_changes2.png")
+
+pause()
+
+
+## execute count
+p_excnt <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "execute count", ])
+p_excnt1 <- p_excnt + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
+p_excnt2 <- p_excnt1 +
+    scale_y_continuous(limits = c(0,4e7), labels = scales::comma_format(big.mark="'"))
+p_excnt3 <- p_excnt2 +
+    labs(title="System Stat execute count, \n22.8. bis 29.8.2019") +
+    ylab("[Anzahl Calls]")
+p_excnt4 <- p_excnt3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_excnt5 <-p_excnt4 + myTheme
+
+## ggsave(plot=p_excnt5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.execute_count2.png")
+
+pause()
+
+
+## enqueue requests
+p_enqrq <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "enqueue requests", ])
+p_enqrq1 <- p_enqrq + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
+p_enqrq2 <- p_enqrq1 +
+    scale_y_continuous(limits = c(0,2e7), labels = scales::comma_format(big.mark="'"))
+p_enqrq3 <- p_enqrq2 +
+    labs(title="System Stat enqueue requests, 22.8.2019 00:00 bis 29.8.2019 00:00 CEST") +
+    ylab("[Anzahl Requests]")
+p_enqrq4 <- p_enqrq3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_enqrq5 <- p_enqrq4 + myTheme
+
+## ggsave(plot=p_enqrq5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.enqueue_request2.png")
+
+pause()
+
+
+tmp.gegas <- dtNulled.selectForLoad.melt.diff[
+  STAT_NAME %in% c("global enqueue gets async", "global enqueue gets sync"),
+  list("sumValue" = sum(value)), by=list(snapHour, variable) ]
+
+str(tmp.gegas)
+## Classes ‘data.table’ and 'data.frame':  338 obs. of  3 variables:
+##  $ snapHour: POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 01:00:00" "2019-08-22 01:00:00" ...
+##  $ variable: Factor w/ 2 levels "sumValue_I","sumValue_P": 1 2 1 2 1 2 1 2 1 2 ...
+##  $ sumValue: num  0 0 9089326 22310446 33312572 ...
+##  - attr(*, ".internal.selfref")=<externalptr>
+
+## global enqueue gets async + global enqueue gets sync
+p_gegas <- ggplot(data=tmp.gegas)
+p_gegas1 <- p_gegas + geom_boxplot(aes(x=variable, y=sumValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
+p_gegas2 <- p_gegas1 +
+    scale_y_continuous(limits = c(0,1.5e10), labels = scales::comma_format(big.mark="'"))
+p_gegas3 <- p_gegas2 +
+    labs(title="System Stat global enqueue gets async + global enqueue gets sync, \n22.8.2019 00:00 bis 29.8.2019 00:00 CEST") +
+    ylab("[Anzahl Gets]")
+p_gegas4 <- p_gegas3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_gegas5 <- p_gegas4 + myTheme
+
+## ggsave(plot=p_gegas5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.glob_enq_gets_sync_async2.png")
+
+
+pause()
+
+## parse count (total)
+p_pcntt <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "parse count (total)", ])
+p_pcntt1 <- p_pcntt + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
+p_pcntt2 <- p_pcntt1 +
+    scale_y_continuous(limits = c(0,5e7), labels = scales::comma_format(big.mark="'"))
+p_pcntt3 <- p_pcntt2 +
+    labs(title="System Stat parse count (total), \n22.8. bis 29.8.2019") +
+    ylab("[Anzahl Parses]")
+p_pcntt4 <- p_pcntt3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_pcntt5 <- p_pcntt4 + myTheme
+
+## ggsave(plot=p_pcntt5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.parse_count_total2.png")
+
+
+pause()
+
+
+## user calls
+p_uc <- ggplot(data=dtNulled.selectForLoad.melt.diff[ STAT_NAME == "user calls", ])
+p_uc1 <- p_uc + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
+p_uc2 <- p_uc1 +
+    scale_y_continuous(limits = c(0,8e7), labels = scales::comma_format(big.mark="'"))
+p_uc3 <- p_uc2 +
+    labs(title="System Stat user calls, 22.8.2019 00:00 bis 29.8.2019 00:00 CEST") +
+    ylab("[Anzahl Calls]")
+p_uc4 <- p_uc3 +
+    scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_uc5 <- p_uc4 + myTheme
+
+## ggsave(plot=p_pcntt5, height=15, width=25, units="cm", filename="./lastindikatoren.auswahl.diff/dba_hist_sysstat.user_calls2.png")
+
+pause()
+
+
+rmlist <- ls(pattern="^p_[a-z]+[0-9]?$")
+rm(list=rmlist)
+
+
+clusterStatistics <- c(
+  "Clusterwide global transactions",
+  "Clusterwide global transactions spanning RAC nodes",
+  "Forwarded 2PC commands across RAC nodes",
+  "gc blocks compressed",
+  "gc blocks corrupt",
+  "gc blocks lost",
+  "gc claim blocks lost",
+  "gc CPU used by this session",
+  "gc cr block build time",
+  "gc cr block flush time",
+  "gc cr block receive time",
+  "gc cr block send time",
+  "gc cr blocks received",
+  "gc cr blocks served",
+  "gc current block flush time",
+  "gc current block pin time",
+  "gc current block receive time",
+  "gc current block send time",
+  "gc current blocks received",
+  "gc current blocks served",
+  "gc force cr disk read",
+  "gc kbytes saved",
+  "gc kbytes sent",
+  "gc local grants",
+  "gc read wait failures",
+  "gc read wait time",
+  "gc read wait timeouts",
+  "gc read waits",
+  "gc reader bypass grants",
+  "gc remote grants",
+  "gcs messages sent",
+  "ges messages sent",
+  "global enqueue CPU used by this session",
+  "global enqueue get time",
+  "global enqueue gets async",
+  "global enqueue gets sync",
+  "global enqueue releases")
+
+
+dtNulled.selectCluster <- dtNulled[ STAT_NAME %in% list(
+  "gc cr block flush time",
+  "gc cr block receive time",
+  "gc cr blocks received",
+  "gc current block flush time",
+  "gc current block receive time",
+  "gc current block send time",
+  "gc current blocks received",
+  "gc local grants",
+  "gc read wait time",
+  "gc read waits",
+  "gc remote grants",
+  "gcs messages sent",
+  "global enqueue get time"), ]
+
+
+str(dtNulled.selectCluster)
+## Classes ‘data.table’ and 'data.frame':  2197 obs. of  4 variables:
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" ...
+##  $ STAT_NAME : chr  "gc cr block flush time" "gc cr block receive time" "gc cr blocks received" "gc current block flush time" ...
+##  $ sumValue_I: num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ sumValue_P: num  0 0 0 0 0 0 0 0 0 0 ...
+##  - attr(*, "sorted")= chr  "snapHour" "STAT_NAME"
+##  - attr(*, ".internal.selfref")=<externalptr> 
+
+
+dtNulled.selectCluster.melt <- melt(dtNulled.selectCluster, id=c("snapHour", "STAT_NAME"), measured=c("sumValue_I","sumValue_P"))
+str(dtNulled.selectCluster.melt)
+## Classes ‘data.table’ and 'data.frame':  4394 obs. of  4 variables:
+##  $ snapHour : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" "2019-08-22 00:00:00" ...
+##  $ STAT_NAME: chr  "gc cr block flush time" "gc cr block receive time" "gc cr blocks received" "gc current block flush time" ...
+##  $ variable : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ value    : num  0 0 0 0 0 0 0 0 0 0 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+
+
+dtNulled.selectCluster.melt.diff <- dtNulled.selectCluster.melt[, list(snapHour, "deltaValue" = diff(value)), by=list(STAT_NAME, variable)]
+## Warnmeldung:
+## In `[.data.table`(dtNulled.selectCluster.melt, , list(snapHour,  :
+## Column 2 of result for group 1 is length 168 but the longest column in this result is 169. Recycled leaving remainder of 1 items.
+## This warning is once only for the first group with this issue.
+
+str(dtNulled.selectCluster.melt.diff)
+## Classes ‘data.table’ and 'data.frame':  4394 obs. of  4 variables:
+##  $ STAT_NAME : chr  "gc cr block flush time" "gc cr block flush time" "gc cr block flush time" "gc cr block flush time" ...
+##  $ variable  : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 01:00:00" "2019-08-22 02:00:00" "2019-08-22 03:00:00" ...
+##  $ deltaValue: num  219 792 3247 5937 3553 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+
+setkeyv(dtNulled.selectCluster.melt.diff, c("snapHour", "STAT_NAME", "variable"))
+tail(dtNulled.selectCluster.melt.diff[ STAT_NAME=="gc cr block flush time", ], 2)
+##                 STAT_NAME   variable   snapHour deltaValue
+## 1: gc cr block flush time sumValue_I 2019-08-29        219
+## 2: gc cr block flush time sumValue_P 2019-08-29        208
+
+head(dtNulled.selectCluster.melt.diff[ STAT_NAME=="gc cr block flush time", ], 2)
+##                 STAT_NAME   variable   snapHour deltaValue
+## 1: gc cr block flush time sumValue_I 2019-08-22        219
+## 2: gc cr block flush time sumValue_P 2019-08-22        208
+
+## Wegen Recycling beim Diffen werden alle deltaValue für snapHour 2019-08-29 00:00:00 auf NA gesetzt.
+dtNulled.selectCluster.melt.diff[snapHour == as.POSIXct("2019-08-29 00:00:00", format="%Y-%m-%d %H:%M:%S"), deltaValue := NA]
+
+## Summary der Delta-Werte
+summarySystatByPlatform.cluster.diff <- dtNulled.selectCluster.melt.diff[, glance(summary(deltaValue)), by=list(STAT_NAME, variable)]
+setkeyv(summarySystatByPlatform.cluster.diff, c("STAT_NAME", "variable"))
+summarySystatByPlatform.cluster.diff
+##                         STAT_NAME   variable minimum          q1     median         mean          q3   maximum na
+##  1:        gc cr block flush time sumValue_I     219     2991.50     4318.5 5.695206e+03     6302.25    132897  9
+##  2:        gc cr block flush time sumValue_P     208     1901.25     2913.0 2.985548e+03     3606.25     10632  1
+##  3:      gc cr block receive time sumValue_I   23933   209352.75   329966.0 3.861591e+05   496389.50   6560186  9
+##  4:      gc cr block receive time sumValue_P   11207    58161.25    98338.0 9.369492e+04   131489.00    186777  1
+##  5:         gc cr blocks received sumValue_I  351574  1870143.75  2863960.5 2.859450e+06  3511972.75  43739457  9
+##  6:         gc cr blocks received sumValue_P  393816  1818985.00  2824363.5 2.716082e+06  3730623.25   5026411  1
+##  7:   gc current block flush time sumValue_I     241     1624.00     2180.5 3.372875e+03     2577.00     66663  9
+##  8:   gc current block flush time sumValue_P     165     1244.50     1737.0 2.225857e+03     2091.00     18209  1
+##  9: gc current block receive time sumValue_I   46888   264485.50   407135.0 4.862190e+05   604765.25   9792169  9
+## 10: gc current block receive time sumValue_P    8556    68368.75   121932.5 1.150149e+05   157077.00    242672  1
+## 11:    gc current block send time sumValue_I       0        0.00        0.0 0.000000e+00        0.00         0  9
+## 12:    gc current block send time sumValue_P       0        0.00        0.0 0.000000e+00        0.00         0  1
+## 13:    gc current blocks received sumValue_I  613082  2816055.75  3931536.5 4.233568e+06  4902532.00  85133679  9
+## 14:    gc current blocks received sumValue_P  297719  2113276.00  3771859.5 3.492699e+06  4682672.50   6871708  1
+## 15:               gc local grants sumValue_I  145046   461166.50   543900.0 8.148218e+05   675209.25  23025140  9
+## 16:               gc local grants sumValue_P  145812   454620.75   591786.0 5.744843e+05   662177.50   1253381  1
+## 17:             gc read wait time sumValue_I      81      610.50     1055.0 2.776444e+03     2462.25     74601  9
+## 18:             gc read wait time sumValue_P      11      322.75      976.0 1.996065e+03     2180.75     13422  1
+## 19:                 gc read waits sumValue_I     104      263.75      426.5 1.023737e+03      801.75     26278  9
+## 20:                 gc read waits sumValue_P      13      139.25      196.5 3.563214e+02      380.00      2118  1
+## 21:              gc remote grants sumValue_I  436520  1548657.75  2143892.5 2.397906e+06  2392900.25  67447972  9
+## 22:              gc remote grants sumValue_P  489928  1821868.50  2389183.5 2.822150e+06  2870893.75  16462586  1
+## 23:             gcs messages sent sumValue_I 2908389 10854128.00 15252304.5 1.564711e+07 17282348.25 329283110  9
+## 24:             gcs messages sent sumValue_P 2607428 11235742.50 18065772.5 1.642877e+07 21583644.75  28949555  1
+## 25:       global enqueue get time sumValue_I  126216   261377.75   362181.0 5.772440e+05   507014.25  14664685  9
+## 26:       global enqueue get time sumValue_P   67242   194728.50   318299.0 3.992633e+05   449238.25   2676945  1
+
+
+statNames <- unique(dtNulled.selectCluster.melt.diff[, STAT_NAME])
+
+## Cluster statistics measuring waiting times
+statNames.time <- grep(".+time$", statNames, value=TRUE)
+statNames.time
+## [1] "gc cr block flush time"        "gc cr block receive time"      "gc current block flush time"   "gc current block receive time"
+##      "gc current block send time"    "gc read wait time"             "global enqueue get time"      
+
+
+## Cluster statistics not measuring time, but quantities related to global cache load
+statNames.gcload <- grep(".+time$", statNames, value=TRUE, invert=TRUE)
+statNames.gcload
+[1] "gc cr blocks received"      "gc current blocks received" "gc local grants"            "gc read waits"              "gc remote grants"           "gcs messages sent"         
+
+
+## Wilcox rank sum test global cache load statistics, with outliers included
+## H0: Q50(Inte) = Q50(Prod), i.e. similiar load on global cache, on both databases
+i = 1
+pval = c()
+h1 = c()       # Alternative Hypothese
+method = c()   # Methode
+wtListe.forGCLoad = list()
+for (sName in statNames.gcload) {
+    w <- wilcox.test(deltaValue ~ variable, data=dtNulled.selectCluster.melt.diff, paired=F, alternative = "two.sided", na.action = na.omit, subset = dtNulled.selectCluster.melt.diff[, STAT_NAME == sName])
+    wtListe.forGCLoad[[sName]] = w
+    pval[i] <- w[["p.value"]]
+    h1[i] <- w[["alternative"]]
+    method[i] = w[["method"]]
+    i = i + 1
+}
+
+wilcoxTest.forGCLoad <- data.frame(statNames.gcload, pval, h1, method)
+colnames(wilcoxTest.forGCLoad) <- c("statistik", "p.value", "alternative", "method")
+
+wilcoxTest.forGCLoad
+##                    statistik      p.value alternative                                            method
+## 1      gc cr blocks received 2.799559e-01   two.sided Wilcoxon rank sum test with continuity correction
+## 2 gc current blocks received 1.612864e-01   two.sided Wilcoxon rank sum test with continuity correction
+## 3            gc local grants 8.081017e-01   two.sided Wilcoxon rank sum test with continuity correction
+## 4              gc read waits 2.593493e-14   two.sided Wilcoxon rank sum test with continuity correction
+## 5           gc remote grants 1.310366e-05   two.sided Wilcoxon rank sum test with continuity correction
+## 6          gcs messages sent 7.857521e-06   two.sided Wilcoxon rank sum test with continuity correction
+
+## The test confirms we can hold on to the null hypothesis for all but three GC load statistics. We will
+## repeat the test, but this time we will exclude outliers.
+
+summarySystatByPlatform.cluster.diff[, IQR := q3 - q1]
+summarySystatByPlatform.cluster.diff
+##                         STAT_NAME   variable minimum          q1     median         mean          q3   maximum na         IQR
+##  1:        gc cr block flush time sumValue_I     219     2991.50     4318.5 5.695206e+03     6302.25    132897  9     3310.75
+##  2:        gc cr block flush time sumValue_P     208     1901.25     2913.0 2.985548e+03     3606.25     10632  1     1705.00
+##  3:      gc cr block receive time sumValue_I   23933   209352.75   329966.0 3.861591e+05   496389.50   6560186  9   287036.75
+##  4:      gc cr block receive time sumValue_P   11207    58161.25    98338.0 9.369492e+04   131489.00    186777  1    73327.75
+##  5:         gc cr blocks received sumValue_I  351574  1870143.75  2863960.5 2.859450e+06  3511972.75  43739457  9  1641829.00
+##  6:         gc cr blocks received sumValue_P  393816  1818985.00  2824363.5 2.716082e+06  3730623.25   5026411  1  1911638.25
+##  7:   gc current block flush time sumValue_I     241     1624.00     2180.5 3.372875e+03     2577.00     66663  9      953.00
+##  8:   gc current block flush time sumValue_P     165     1244.50     1737.0 2.225857e+03     2091.00     18209  1      846.50
+##  9: gc current block receive time sumValue_I   46888   264485.50   407135.0 4.862190e+05   604765.25   9792169  9   340279.75
+## 10: gc current block receive time sumValue_P    8556    68368.75   121932.5 1.150149e+05   157077.00    242672  1    88708.25
+## 11:    gc current block send time sumValue_I       0        0.00        0.0 0.000000e+00        0.00         0  9        0.00
+## 12:    gc current block send time sumValue_P       0        0.00        0.0 0.000000e+00        0.00         0  1        0.00
+## 13:    gc current blocks received sumValue_I  613082  2816055.75  3931536.5 4.233568e+06  4902532.00  85133679  9  2086476.25
+## 14:    gc current blocks received sumValue_P  297719  2113276.00  3771859.5 3.492699e+06  4682672.50   6871708  1  2569396.50
+## 15:               gc local grants sumValue_I  145046   461166.50   543900.0 8.148218e+05   675209.25  23025140  9   214042.75
+## 16:               gc local grants sumValue_P  145812   454620.75   591786.0 5.744843e+05   662177.50   1253381  1   207556.75
+## 17:             gc read wait time sumValue_I      81      610.50     1055.0 2.776444e+03     2462.25     74601  9     1851.75
+## 18:             gc read wait time sumValue_P      11      322.75      976.0 1.996065e+03     2180.75     13422  1     1858.00
+## 19:                 gc read waits sumValue_I     104      263.75      426.5 1.023737e+03      801.75     26278  9      538.00
+## 20:                 gc read waits sumValue_P      13      139.25      196.5 3.563214e+02      380.00      2118  1      240.75
+## 21:              gc remote grants sumValue_I  436520  1548657.75  2143892.5 2.397906e+06  2392900.25  67447972  9   844242.50
+## 22:              gc remote grants sumValue_P  489928  1821868.50  2389183.5 2.822150e+06  2870893.75  16462586  1  1049025.25
+## 23:             gcs messages sent sumValue_I 2908389 10854128.00 15252304.5 1.564711e+07 17282348.25 329283110  9  6428220.25
+## 24:             gcs messages sent sumValue_P 2607428 11235742.50 18065772.5 1.642877e+07 21583644.75  28949555  1 10347902.25
+## 25:       global enqueue get time sumValue_I  126216   261377.75   362181.0 5.772440e+05   507014.25  14664685  9   245636.50
+## 26:       global enqueue get time sumValue_P   67242   194728.50   318299.0 3.992633e+05   449238.25   2676945  1   254509.75
+
+dtNulled.selectCluster.melt.diff.ext <- merge(
+   dtNulled.selectCluster.melt.diff,
+   summarySystatByPlatform.cluster.diff,
+   by = c("STAT_NAME", "variable"), all=T, incomparables=NA)
+
+str(dtNulled.selectCluster.melt.diff.ext)
+## Classes ‘data.table’ and 'data.frame':  4394 obs. of  12 variables:
+##  $ STAT_NAME : chr  "gc cr block flush time" "gc cr block flush time" "gc cr block flush time" "gc cr block flush time" ...
+##  $ variable  : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 01:00:00" "2019-08-22 02:00:00" "2019-08-22 03:00:00" ...
+##  $ deltaValue: num  219 792 3247 5937 3553 ...
+##  $ minimum   : num  219 219 219 219 219 219 219 219 219 219 ...
+##  $ q1        : num  2992 2992 2992 2992 2992 ...
+##  $ median    : num  4318 4318 4318 4318 4318 ...
+##  $ mean      : num  5695 5695 5695 5695 5695 ...
+##  $ q3        : num  6302 6302 6302 6302 6302 ...
+##  $ maximum   : num  132897 132897 132897 132897 132897 ...
+##  $ na        : num  9 9 9 9 9 9 9 9 9 9 ...
+##  $ IQR       : num  3311 3311 3311 3311 3311 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "STAT_NAME" "variable"
+
+## Subset of data without outliers; only data within boxplot whiskers
+dtNulled.selectCluster.melt.diff.nooutlier <- dtNulled.selectCluster.melt.diff.ext[ deltaValue <= q3 + 1.5 * IQR & deltaValue >= q1 - 1.5 * IQR, ]
+str(dtNulled.selectCluster.melt.diff.nooutlier)
+## Classes ‘data.table’ and 'data.frame':  4058 obs. of  12 variables:
+##  $ STAT_NAME : chr  "gc cr block flush time" "gc cr block flush time" "gc cr block flush time" "gc cr block flush time" ...
+##  $ variable  : Factor w/ 2 levels "sumValue_I","sumValue_P": 1 1 1 1 1 1 1 1 1 1 ...
+##  $ snapHour  : POSIXct, format: "2019-08-22 00:00:00" "2019-08-22 01:00:00" "2019-08-22 02:00:00" "2019-08-22 03:00:00" ...
+##  $ deltaValue: num  219 792 3247 5937 3553 ...
+##  $ minimum   : num  219 219 219 219 219 219 219 219 219 219 ...
+##  $ q1        : num  2992 2992 2992 2992 2992 ...
+##  $ median    : num  4318 4318 4318 4318 4318 ...
+##  $ mean      : num  5695 5695 5695 5695 5695 ...
+##  $ q3        : num  6302 6302 6302 6302 6302 ...
+##  $ maximum   : num  132897 132897 132897 132897 132897 ...
+##  $ na        : num  9 9 9 9 9 9 9 9 9 9 ...
+##  $ IQR       : num  3311 3311 3311 3311 3311 ...
+##  - attr(*, "sorted")= chr  "STAT_NAME" "variable"
+##  - attr(*, ".internal.selfref")=<externalptr> 
+
+
+## Wilcox rank sum test for global cache load statistics, with outliers excluded
+## H0: Q50(Inte) = Q50(Prod), i.e. similiar load on global cache, on both databases
+i = 1
+pval = c()
+h1 = c()       # Alternative Hypothese
+method = c()   # Methode
+wtListe.forGCLoad.no = list()
+for (sName in statNames.gcload) {
+    w <- wilcox.test(deltaValue ~ variable, data=dtNulled.selectCluster.melt.diff.nooutlier, paired=F, alternative = "two.sided", na.action = na.omit, subset = dtNulled.selectCluster.melt.diff.nooutlier[, STAT_NAME == sName])
+    wtListe.forGCLoad.no[[sName]] = w
+    pval[i] <- w[["p.value"]]
+    h1[i] <- w[["alternative"]]
+    method[i] = w[["method"]]
+    i = i + 1
+}
+
+wilcoxTest.forGCLoad.no <- data.frame(statNames.gcload, pval, h1, method)
+colnames(wilcoxTest.forGCLoad.no) <- c("statistik", "p.value", "alternative", "method")
+
+wilcoxTest.forGCLoad.no
+##                    statistik      p.value alternative                                            method
+## 1      gc cr blocks received 2.365051e-01   two.sided Wilcoxon rank sum test with continuity correction
+## 2 gc current blocks received 1.905376e-01   two.sided Wilcoxon rank sum test with continuity correction
+## 3            gc local grants 1.314901e-03   two.sided Wilcoxon rank sum test with continuity correction
+## 4              gc read waits 1.020914e-17   two.sided Wilcoxon rank sum test with continuity correction
+## 5           gc remote grants 4.021448e-03   two.sided Wilcoxon rank sum test with continuity correction
+## 6          gcs messages sent 4.470929e-06   two.sided Wilcoxon rank sum test with continuity correction
+
+## Same result as with outliers included. In the case of gc remote grants, the decision for H1 is quite narrow.
+## For the 3 statistics where we discard H0, we could also go for a one-tailed test. The boxplots however
+## give us a clear picture.
+
+
+## library(data.table)
+## library(broom)
+## library(ggplot2)
+
+## setwd(""C:/Users/ue85374/home/ue85374/cus/bugfix-und-entwicklung/KIHUB-7279-vergleich-cus-dbs-prod-und-inte-auf-systemebene.nach-Patch-1/statistiken.2019-08-22T0000-bis-2019-08-28T1000/last-und-rac")
+
+## load("./cas-session.2019-09-18.RData")
+
+## Same procedure for the cluster statistics measuring waiting times:
+
+## Wilcox rank sum test global cache waiting time statistics, with outliers included
+## H0: Q50(Inte) <= Q50(Prod), i.e. median of global cache waiting times is higher on Prod than on Inte
+## H1: Q50(Inte) > Q50(Prod), i.e. median is higher on Inte
+i = 1
+pval = c()
+h1 = c()       # Alternative Hypothese
+method = c()   # Methode
+wtListe.forGCWaitingTime = list()
+for (sName in statNames.time) {
+    w <- wilcox.test(deltaValue ~ variable, data=dtNulled.selectCluster.melt.diff, paired=F, alternative = "greater", na.action = na.omit, subset = dtNulled.selectCluster.melt.diff[, STAT_NAME == sName])
+    wtListe.forGCWaitingTime[[sName]] = w
+    pval[i] <- w[["p.value"]]
+    h1[i] <- w[["alternative"]]
+    method[i] = w[["method"]]
+    i = i + 1
+}
+
+wilcoxTest.forGCWaitingTime <- data.frame(statNames.time, pval, h1, method)
+colnames(wilcoxTest.forGCWaitingTime) <- c("statistik", "p.value", "alternative", "method")
+
+wilcoxTest.forGCWaitingTime
+##                       statistik      p.value alternative                                            method
+## 1        gc cr block flush time 1.744369e-13     greater Wilcoxon rank sum test with continuity correction
+## 2      gc cr block receive time 3.230590e-35     greater Wilcoxon rank sum test with continuity correction
+## 3   gc current block flush time 1.295017e-07     greater Wilcoxon rank sum test with continuity correction
+## 4 gc current block receive time 5.143932e-41     greater Wilcoxon rank sum test with continuity correction
+## 5    gc current block send time 1.000000e+00     greater Wilcoxon rank sum test with continuity correction
+## 6             gc read wait time 2.003196e-02     greater Wilcoxon rank sum test with continuity correction
+## 7       global enqueue get time 1.965542e-03     greater Wilcoxon rank sum test with continuity correction
+
+## --> H0 is discarded for six out of seven selected Global Cache waiting time statistics, in favour of H1
+##     Q50(Inte) > Q50(Prod), i.e. higher Cluster waiting times on Inte than on Prod. The result for
+##     gc current block send time can be discarded, as the value is constantly 0, for both databases.
+
+
+## Wilcox rank sum test for global cache waiting time statistics, with outliers excluded
+## H0: Q50(Inte) <= Q50(Prod), i.e. median of global cache waiting times is higher on Prod than on Inte
+## H1: Q50(Inte) > Q50(Prod), i.e. median is higher on Inte
+i = 1
+pval = c()
+h1 = c()       # Alternative Hypothese
+method = c()   # Methode
+wtListe.forGCWaitingTime.no = list()
+for (sName in statNames.time) {
+    w <- wilcox.test(deltaValue ~ variable, data=dtNulled.selectCluster.melt.diff.nooutlier, paired=F, alternative = "greater", na.action = na.omit, subset = dtNulled.selectCluster.melt.diff.nooutlier[, STAT_NAME == sName])
+    wtListe.forGCWaitingTime.no[[sName]] = w
+    pval[i] <- w[["p.value"]]
+    h1[i] <- w[["alternative"]]
+    method[i] = w[["method"]]
+    i = i + 1
+}
+
+wilcoxTest.forGCWaitingTime.no <- data.frame(statNames.time, pval, h1, method)
+colnames(wilcoxTest.forGCWaitingTime.no) <- c("statistik", "p.value", "alternative", "method")
+
+wilcoxTest.forGCWaitingTime.no
+##                       statistik      p.value alternative                                            method
+## 1        gc cr block flush time 5.772206e-15     greater Wilcoxon rank sum test with continuity correction
+## 2      gc cr block receive time 5.352862e-35     greater Wilcoxon rank sum test with continuity correction
+## 3   gc current block flush time 5.804979e-09     greater Wilcoxon rank sum test with continuity correction
+## 4 gc current block receive time 8.331537e-41     greater Wilcoxon rank sum test with continuity correction
+## 5    gc current block send time 1.000000e+00     greater Wilcoxon rank sum test with continuity correction
+## 6             gc read wait time 1.223998e-03     greater Wilcoxon rank sum test with continuity correction
+## 7       global enqueue get time 3.384996e-03     greater Wilcoxon rank sum test with continuity correction
+
+## --> confirms rejection of H0 in favour of H1
+
+
+statName <- "gc cr block receive time"
+y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[1/100 Sekunden]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+  scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+## plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_cr_block_receive_time2.png")
+
+pause()
+
+
+statName <- "gc cr block flush time"
+y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[1/100 Sekunden]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+  scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+## plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_cr_block_flush_time2.png")
+
+pause()
+
+
+statName <- "gc current block receive time"
+y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[1/100 Sekunden]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+  scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+## plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_current_block_receive_time2.png")
+
+pause()
+
+
+statName <- "gc current block receive time"
+y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[1/100 Sekunden]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+  scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+## plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_current_block_receive_time2.png")
+
+pause()
+
+
+statName <- "gc read wait time"
+y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[1/100 Sekunden]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+  scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+## plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path='lastindikatoren.auswahl.diff', filename="sysstat.gc_read_wait_time2.png")
+
+pause()
+
+
+statName <- "global enqueue get time"
+y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(+big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[1/100 Sekunden]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+  scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+## plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path='lastindikatoren.auswahl.diff', filename="sysstat.global_enqueue_get_time2.png")
+
+pause()
+
+
+statName <- "gc cr blocks received"
+y_max <- 2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[Anzahl]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+## plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_cr_blocks_received2.png")
+
+pause()
+
+
+statName <- "gc current blocks received"
+y_max <- 2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[Anzahl]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+##plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_cur_blocks_received2.png")
+
+pause()
+
+
+statName <- "gc local grants"
+y_max <- 2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[Anzahl]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <-p_4 + myTheme
+##plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_local_grants2.png")
+
+pause()
+
+
+statName <- "gc read waits"
+y_max <- 2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[Anzahl]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+##plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_read_waits2.png")
+
+pause()
+
+
+statName <- "gc remote grants"
+y_max <- 2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[Anzahl]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <- p_4 + myTheme
+## plot(p_5)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_remote_grants2.png")
+
+pause()
+
+
+statName <- "gcs messages sent"
+y_max <- 2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
+p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
+p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
+p_2 <- p_1 +
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
+p_3 <- p_2 +
+  labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
+  ylab("[Anzahl]")
+p_4 <- p_3 +
+  scale_fill_discrete(name="Plattform", breaks=c("sumValue_I", "sumValue_P"), labels=c("CUS DB Inte", "CUS DB Prod")) +
+    scale_x_discrete(name="", breaks=c("sumValue_I", "sumValue_P"), labels=c("",""))
+p_5 <-p_4 + myTheme
+##plot(p_4)
+
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gcs_messages_sent2.png")
+
+pause()
+
