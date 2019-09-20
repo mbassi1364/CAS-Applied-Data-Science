@@ -465,7 +465,7 @@ wilcoxTest
 ## 3 concurrency wait time 4.289956e-13   two.sided Wilcoxon rank sum test with continuity correction
 ## 4    user I/O wait time 5.923306e-25   two.sided Wilcoxon rank sum test with continuity correction
 
-## The Wilcoxon rank sum test (equivalent to the Mann-Whitney test), wiht H0: Equal Medians
+## The Wilcoxon rank sum test (equivalent to the Mann-Whitney test), with H0: Equal Medians
 
 wtListe
 ## $`application wait time`
@@ -1050,7 +1050,7 @@ pause()
 
 tmp.gegas <- dtNulled.selectForLoad.melt.diff[
   STAT_NAME %in% c("global enqueue gets async", "global enqueue gets sync"),
-  list("sumValue" = sum(value)), by=list(snapHour, variable) ]
+  list("sumValue" = sum(deltaValue)), by=list(snapHour, variable) ]
 
 str(tmp.gegas)
 ## Classes ‘data.table’ and 'data.frame':  338 obs. of  3 variables:
@@ -1063,7 +1063,7 @@ str(tmp.gegas)
 p_gegas <- ggplot(data=tmp.gegas)
 p_gegas1 <- p_gegas + geom_boxplot(aes(x=variable, y=sumValue, fill=variable), stat="boxplot", na.rm=TRUE,notch=FALSE)
 p_gegas2 <- p_gegas1 +
-    scale_y_continuous(limits = c(0,1.5e10), labels = scales::comma_format(big.mark="'"))
+    scale_y_continuous(limits = c(0,1e8), labels = scales::comma_format(big.mark="'"))
 p_gegas3 <- p_gegas2 +
     labs(title="System Stat global enqueue gets async + global enqueue gets sync, \n22.8.2019 00:00 bis 29.8.2019 00:00 CEST") +
     ylab("[Anzahl Gets]")
