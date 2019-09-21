@@ -1524,7 +1524,7 @@ ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswah
 pause()
 
 
-statName <- "gc current block receive time"
+statName <- "gc current block flush time"
 y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
 p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
 p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
@@ -1539,12 +1539,10 @@ p_4 <- p_3 +
 p_5 <- p_4 + myTheme
 ## plot(p_5)
 
-ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_current_block_receive_time2.png")
+ggsave(plot=p_5, height=15, width=25, units="cm", path="./lastindikatoren.auswahl.diff", filename="sysstat.gc_cur_block_flush_time2.png")
 
-pause()
+pause
 
-
-statName <- "gc current block receive time"
 y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3)]
 p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
 p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
@@ -1589,7 +1587,7 @@ y_max =  2 * summarySystatByPlatform.cluster.diff[ STAT_NAME == statName, max(q3
 p <- ggplot(data=dtNulled.selectCluster.melt.diff[ STAT_NAME == statName, ])
 p_1 <- p + geom_boxplot(aes(x=variable, y=deltaValue, fill=variable), stat="boxplot", na.rm=TRUE, notch=FALSE)
 p_2 <- p_1 +
-  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(+big.mark="'"))
+  scale_y_continuous(limits = c(0,y_max), labels = scales::comma_format(big.mark="'"))
 p_3 <- p_2 +
   labs(title=paste("System Stat ", statName, ", \n22.8. bis 29.8.2019", sep="")) +
   ylab("[1/100 Sekunden]")
