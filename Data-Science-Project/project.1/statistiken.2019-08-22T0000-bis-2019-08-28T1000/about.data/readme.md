@@ -4,7 +4,7 @@
 
 ## Data Source
 
-The data was taken from the Oracle (11.2.0.4) _dynamic performance view_ SYS.DBA_HIST_SYSSTAT.
+The data was taken from the Oracle (11.2.0.4) _performance view_ SYS.DBA_HIST_SYSSTAT.
 This view contains several hundert historicized system statistics, i.e. snapshots of the
 real time system statistic. The snapshots are taken at the end of every full hour; however
 this might vary due to system restart, or when the database is under stress.
@@ -69,62 +69,23 @@ where begin_interval_time between timestamp '2019-08-22 00:00:00'
 order by begin_interval_time, instance_number, stat_name;
 ````
 
+## Datafiles
+
 The selected data have been exported to the **';'**-delimited files dba_hist_sysstat.inte.dsv
 for the integration database, and dba_hist_sysstat.prod.dsv for the production database.
 
+### Datafile Structure
 
-## Statistics selected for the analysis
+* Format: Text file
+* Field separator: “;” (semicolon)
+* First line: field names
+* 2nd line and below: records
+* Field 1: BEGIN_INTERVAL_TIME; timestamp YYYY-MM-DD HH24:MI:SS
+* Field 2: END_INTERVAL_TIME; timestamp YYYY-MM-DD HH24:MI:SS
+* Field 3: SNAP_ID; snapshot ID, non-negative integer
+* Field 4: INSTANCE_NUMBER; ID of the database instance, non-negative integer
+* Field 5: STAT_NAME; statistics’ name
+* Field 6: VALUE; statistics’ value, integer
 
-### Database load statistics
-
-* application wait time (in centiseconds)
-* cluster wait time (in centiseconds)
-* concurrency wait time (in centiseconds)
-* user I/O wait time (in centiseconds)
-* db block changes (number)
-* enqueue requests (number)
-* execute count (number)
-* global enqueue gets async (number)
-* global enqueue gets sync (number)
-* parse count (total, number)
-* user calls (number)
-
-The first four statistics are the total wait times for the wait classes _Application_,
-_Concurrency_, _Cluster_ and _User I/O_. The other statistics allow to interpret various
-aspects of database activity.
-
-
-### Global Cache Waits (Cluster)
-
-These statistics are chosen to show the activity of the clusters global cache, i.e.
-the accesses to data currently held by one database instance of the cluster in its
-local cache, and requested by the other clusters database instance. The protocol to
-handle global cache requests is quite complex, and the system statistics allow to
-measure almost every single step. The statistics chosen here however are of the
-_summary_ type.
-
-The statistics chosen &ndash; all numbers &ndash; are
-
-* gc cr blocks received
-* gc cr blocks served
-* gc current blocks received
-* gc current blocks served
-* gc local grants
-* gc read waits
-* gc remote grants
-* gcs messages sent
-
-
-### Global Cache Wait Time (Cluster)
-
-The two statistics below measure the overall wait time for the to most
-import global cache request methods, _consistent read_, and _current read_.
-
-* gc cr block receive time (centiseconds)
-* gc current block receive time (centiseconds)
-
-As mentioned above, the wait times for most of the intermediate protocol step could
-be measured as well. For the goal of this analysis however, only the end-to-end wait
-times are of interest.
 
 </div>
