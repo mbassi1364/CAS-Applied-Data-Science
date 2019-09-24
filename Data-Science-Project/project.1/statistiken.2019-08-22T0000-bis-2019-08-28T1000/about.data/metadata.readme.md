@@ -74,6 +74,8 @@ order by begin_interval_time, instance_number, stat_name;
 The selected data have been exported to the **';'**-delimited files dba_hist_sysstat.inte.dsv
 for the integration database, and dba_hist_sysstat.prod.dsv for the production database.
 
+The character set encoding scheme of the export files is UTF-8.
+
 ### Datafile Structure
 
 * Format: Text file
