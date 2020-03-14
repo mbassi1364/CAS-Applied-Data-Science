@@ -1,194 +1,92 @@
+setwd('C:/data/CAS-ADS/Git.repos/CAS-Applied-Data-Science/Machine-Learning-Project/project.1/metriken.2020-03-14/data/prod.dba_hist_sysmetric_summary.2020-02-12-bis-2020-03-14')
+daten <- read.csv2(file="sysmetrics-summary.dsv", sep=";", dec=".", stringsAsFactors=F)
+str(daten)
+library(data.table)
+dt <- data.table(daten)
+str(dt)
 
-R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
-Copyright (C) 2018 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64 (64-bit)
+sTimeTmp <- dt[, as.POSIXct(BEGIN_TIME, format="%Y-%m-%d %H:%M:%S")]
+str(sTimeTmp)
 
-R ist freie Software und kommt OHNE JEGLICHE GARANTIE.
-Sie sind eingeladen, es unter bestimmten Bedingungen weiter zu verbreiten.
-Tippen Sie 'license()' or 'licence()' für Details dazu.
+sum(is.na(sTimeTmp))
+tmpna <- which(is.na(sTimeTmp))
+## Toad exportiert von einem Oracle DATE nur den Datumsanteil, wenn der Zeitanteil 00:00:00 ist
+## Umwandlung in POSIXct-Format mit vollem Datumsformat schl�gt dann fehl.
 
-R ist ein Gemeinschaftsprojekt mit vielen Beitragenden.
-Tippen Sie 'contributors()' für mehr Information und 'citation()',
-um zu erfahren, wie R oder R packages in Publikationen zitiert werden können.
+dt[tmpna,  BEGIN_TIME := paste(BEGIN_TIME, '00:00:00', ' ')]
+dt[tmpna, ]
 
-Tippen Sie 'demo()' für einige Demos, 'help()' für on-line Hilfe, oder
-'help.start()' für eine HTML Browserschnittstelle zur Hilfe.
-Tippen Sie 'q()', um R zu verlassen.
+sTimeTmp <- dt[, as.POSIXct(BEGIN_TIME, format="%Y-%m-%d %H:%M:%S")]
+sum(is.na(sTimeTmp))
 
-> setwd('C:/data/CAS-ADS/Git.repos/CAS-Applied-Data-Science/Machine-Learning-Project/project.1/metriken.2020-03-14/data/prod.dba_hist_sysmetric_summary.2020-02-12-bis-2020-03-14')
-> daten <- read.csv2(file="sysmetrics-summary.dsv", sep=";", dec=".", stringsAsFactors=F)
-> str(daten)
-'data.frame':   222622 obs. of  12 variables:
- $ SNAP_ID           : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
- $ INSTANCE_NUMBER   : int  1 1 1 1 1 1 1 1 1 1 ...
- $ BEGIN_TIME        : chr  "12/02/2020 23:59:54" "12/02/2020 23:59:54" "12/02/2020 23:59:54" "12/02/2020 23:59:54" ...
- $ END_TIME          : chr  "13/02/2020 00:59:55" "13/02/2020 00:59:55" "13/02/2020 00:59:55" "13/02/2020 00:59:55" ...
- $ INTSIZE           : int  359951 359951 359951 359951 359951 359951 359951 359951 359951 359951 ...
- $ METRIC_ID         : int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
- $ GROUP_ID          : int  2 2 2 2 2 2 2 2 2 2 ...
- $ NUM_INTERVAL      : int  60 60 60 60 60 60 60 60 60 60 ...
- $ MINVAL            : int  0 0 0 0 0 0 0 0 0 0 ...
- $ AVERAGE           : num  98.3 100 100 30 5035.7 ...
- $ MAXVAL            : num  99.5 100 100 55.9 15728.1 ...
- $ STANDARD_DEVIATION: num  1.05 0.00 3.23e-04 9.33 2.71e+03 ...
-> library(data.table)
-data.table 1.11.8  Latest news: r-datatable.com
-> dt <- data.table(daten)
-> str(dt)
-Classes ‘data.table’ and 'data.frame':  222622 obs. of  12 variables:
- $ SNAP_ID           : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
- $ INSTANCE_NUMBER   : int  1 1 1 1 1 1 1 1 1 1 ...
- $ BEGIN_TIME        : chr  "12/02/2020 23:59:54" "12/02/2020 23:59:54" "12/02/2020 23:59:54" "12/02/2020 23:59:54" ...
- $ END_TIME          : chr  "13/02/2020 00:59:55" "13/02/2020 00:59:55" "13/02/2020 00:59:55" "13/02/2020 00:59:55" ...
- $ INTSIZE           : int  359951 359951 359951 359951 359951 359951 359951 359951 359951 359951 ...
- $ METRIC_ID         : int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
- $ GROUP_ID          : int  2 2 2 2 2 2 2 2 2 2 ...
- $ NUM_INTERVAL      : int  60 60 60 60 60 60 60 60 60 60 ...
- $ MINVAL            : int  0 0 0 0 0 0 0 0 0 0 ...
- $ AVERAGE           : num  98.3 100 100 30 5035.7 ...
- $ MAXVAL            : num  99.5 100 100 55.9 15728.1 ...
- $ STANDARD_DEVIATION: num  1.05 0.00 3.23e-04 9.33 2.71e+03 ...
- - attr(*, ".internal.selfref")=<externalptr> 
-> sTimeTmp <- dt[, as.POSIXct(BEGIN_TIME, format="%d/%m/%Y %H:%M:%S")]
-> str(sTimeTmp)
- POSIXct[1:222622], format: "2020-02-12 23:59:54" "2020-02-12 23:59:54" "2020-02-12 23:59:54" "2020-02-12 23:59:54" "2020-02-12 23:59:54" "2020-02-12 23:59:54" "2020-02-12 23:59:54" ...
-> sTime <- trunc(sTimeTmp, units="mins")
-> str(sTime)
- POSIXlt[1:222622], format: "2020-02-12 23:59:00" "2020-02-12 23:59:00" "2020-02-12 23:59:00" "2020-02-12 23:59:00" "2020-02-12 23:59:00" "2020-02-12 23:59:00" "2020-02-12 23:59:00" ...
-> dt[, sampleTime := as.POSIXct(sTime)]
-> str(dt)
-Classes ‘data.table’ and 'data.frame':  222622 obs. of  13 variables:
- $ SNAP_ID           : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
- $ INSTANCE_NUMBER   : int  1 1 1 1 1 1 1 1 1 1 ...
- $ BEGIN_TIME        : chr  "12/02/2020 23:59:54" "12/02/2020 23:59:54" "12/02/2020 23:59:54" "12/02/2020 23:59:54" ...
- $ END_TIME          : chr  "13/02/2020 00:59:55" "13/02/2020 00:59:55" "13/02/2020 00:59:55" "13/02/2020 00:59:55" ...
- $ INTSIZE           : int  359951 359951 359951 359951 359951 359951 359951 359951 359951 359951 ...
- $ METRIC_ID         : int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
- $ GROUP_ID          : int  2 2 2 2 2 2 2 2 2 2 ...
- $ NUM_INTERVAL      : int  60 60 60 60 60 60 60 60 60 60 ...
- $ MINVAL            : int  0 0 0 0 0 0 0 0 0 0 ...
- $ AVERAGE           : num  98.3 100 100 30 5035.7 ...
- $ MAXVAL            : num  99.5 100 100 55.9 15728.1 ...
- $ STANDARD_DEVIATION: num  1.05 0.00 3.23e-04 9.33 2.71e+03 ...
- $ sampleTime        : POSIXct, format: "2020-02-12 23:59:00" "2020-02-12 23:59:00" "2020-02-12 23:59:00" "2020-02-12 23:59:00" ...
- - attr(*, ".internal.selfref")=<externalptr> 
-> setkeyv(dt, c("sampleTime", "METRIC_ID", "GROUP_ID"))
-> 
-> ## kontrollieren, ob alle Metriken in allen Samples vorhanden sind
-> daten.metrics <- read.csv2(file="metrics-meta.dsv", sep=";", dec=".", stringsAsFactors=F)
-> str(daten.metrics)
-'data.frame':   158 obs. of  7 variables:
- $ METRIC_ID    : int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
- $ METRIC_NAME  : chr  "Buffer Cache Hit Ratio" "Memory Sorts Ratio" "Redo Allocation Hit Ratio" "User Transaction Per Sec" ...
- $ METRIC_UNIT  : chr  "% (LogRead - PhyRead)/LogRead" "% MemSort/(MemSort + DiskSort)" "% (#Redo - RedoSpaceReq)/#Redo" "Transactions Per Second" ...
- $ GROUP_ID     : int  2 2 2 2 2 2 2 2 2 2 ...
- $ GROUP_NAME   : chr  "System Metrics Long Duration" "System Metrics Long Duration" "System Metrics Long Duration" "System Metrics Long Duration" ...
- $ INTERVAL_SIZE: int  6000 6000 6000 6000 6000 6000 6000 6000 6000 6000 ...
- $ MAX_INTERVAL : int  60 60 60 60 60 60 60 60 60 60 ...
-> dt.metrics <- data.table(daten.metrics[, c("METRIC_ID", "GROUP_ID")])
-> str(dt.metrics)
-Classes ‘data.table’ and 'data.frame':  158 obs. of  2 variables:
- $ METRIC_ID: int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
- $ GROUP_ID : int  2 2 2 2 2 2 2 2 2 2 ...
- - attr(*, ".internal.selfref")=<externalptr> 
-> setkeyv(dt.metrics, c("METRIC_ID", "GROUP_ID"))
-> dt.test <- merge(dt, dt.metrics, by=c("METRIC_ID", "GROUP_ID"), all=T)
-> str(dt.test)
-Classes ‘data.table’ and 'data.frame':  222622 obs. of  13 variables:
- $ METRIC_ID         : int  2000 2000 2000 2000 2000 2000 2000 2000 2000 2000 ...
- $ GROUP_ID          : int  2 2 2 2 2 2 2 2 2 2 ...
- $ SNAP_ID           : int  39888 39768 39768 39769 39769 39770 39770 39771 39771 39772 ...
- $ INSTANCE_NUMBER   : int  1 1 2 1 2 1 2 1 2 1 ...
- $ BEGIN_TIME        : chr  "18/02/2020" "12/02/2020 23:59:54" "13/02/2020 00:00:18" "13/02/2020 00:59:55" ...
- $ END_TIME          : chr  "18/02/2020 01:00:01" "13/02/2020 00:59:55" "13/02/2020 01:00:18" "13/02/2020 01:59:56" ...
- $ INTSIZE           : int  360053 359951 359919 360041 360011 359943 354007 360047 360019 359938 ...
- $ NUM_INTERVAL      : int  60 60 60 60 60 60 59 60 60 60 ...
- $ MINVAL            : int  0 0 0 0 0 0 0 0 0 0 ...
- $ AVERAGE           : num  98 98.3 99.7 99.2 99.9 ...
- $ MAXVAL            : num  99.4 99.5 100 100 100 ...
- $ STANDARD_DEVIATION: num  0.889 1.055 0.251 1.274 0.261 ...
- $ sampleTime        : POSIXct, format: NA "2020-02-12 23:59:00" "2020-02-13 00:00:00" "2020-02-13 00:59:00" ...
- - attr(*, ".internal.selfref")=<externalptr> 
- - attr(*, "sorted")= chr  "METRIC_ID" "GROUP_ID"
-> setkeyv(dt.test, c("sampleTime", "METRIC_ID", "GROUP_ID"))
-> str(dt.test[is.na(MINVAL), ])
-Classes ‘data.table’ and 'data.frame':  0 obs. of  13 variables:
- $ METRIC_ID         : int 
- $ GROUP_ID          : int 
- $ SNAP_ID           : int 
- $ INSTANCE_NUMBER   : int 
- $ BEGIN_TIME        : chr 
- $ END_TIME          : chr 
- $ INTSIZE           : int 
- $ NUM_INTERVAL      : int 
- $ MINVAL            : int 
- $ AVERAGE           : num 
- $ MAXVAL            : num 
- $ STANDARD_DEVIATION: num 
- $ sampleTime        :Classes 'POSIXct', 'POSIXt'  atomic (0) 
-  ..- attr(*, "tzone")= chr ""
- - attr(*, "sorted")= chr  "sampleTime" "METRIC_ID" "GROUP_ID"
- - attr(*, ".internal.selfref")=<externalptr> 
-> str(dt.test[is.na(MAXVAL), ])
-Classes ‘data.table’ and 'data.frame':  0 obs. of  13 variables:
- $ METRIC_ID         : int 
- $ GROUP_ID          : int 
- $ SNAP_ID           : int 
- $ INSTANCE_NUMBER   : int 
- $ BEGIN_TIME        : chr 
- $ END_TIME          : chr 
- $ INTSIZE           : int 
- $ NUM_INTERVAL      : int 
- $ MINVAL            : int 
- $ AVERAGE           : num 
- $ MAXVAL            : num 
- $ STANDARD_DEVIATION: num 
- $ sampleTime        :Classes 'POSIXct', 'POSIXt'  atomic (0) 
-  ..- attr(*, "tzone")= chr ""
- - attr(*, "sorted")= chr  "sampleTime" "METRIC_ID" "GROUP_ID"
- - attr(*, ".internal.selfref")=<externalptr> 
-> str(dt.test[is.na(AVERAGE), ])
-Classes ‘data.table’ and 'data.frame':  0 obs. of  13 variables:
- $ METRIC_ID         : int 
- $ GROUP_ID          : int 
- $ SNAP_ID           : int 
- $ INSTANCE_NUMBER   : int 
- $ BEGIN_TIME        : chr 
- $ END_TIME          : chr 
- $ INTSIZE           : int 
- $ NUM_INTERVAL      : int 
- $ MINVAL            : int 
- $ AVERAGE           : num 
- $ MAXVAL            : num 
- $ STANDARD_DEVIATION: num 
- $ sampleTime        :Classes 'POSIXct', 'POSIXt'  atomic (0) 
-  ..- attr(*, "tzone")= chr ""
- - attr(*, "sorted")= chr  "sampleTime" "METRIC_ID" "GROUP_ID"
- - attr(*, ".internal.selfref")=<externalptr> 
-> str(dt.test[is.na(STANDARD_DEVIATION), ])
-Classes ‘data.table’ and 'data.frame':  19 obs. of  13 variables:
- $ METRIC_ID         : int  2115 2115 2115 2115 2115 2115 2115 2115 2115 2115 ...
- $ GROUP_ID          : int  2 2 2 2 2 2 2 2 2 2 ...
- $ SNAP_ID           : int  39769 39841 39844 39889 39891 39913 39937 39985 39988 40009 ...
- $ INSTANCE_NUMBER   : int  1 1 2 2 2 2 2 2 2 2 ...
- $ BEGIN_TIME        : chr  "13/02/2020 00:59:55" "16/02/2020 01:00:34" "16/02/2020 03:59:59" "18/02/2020 00:59:24" ...
- $ END_TIME          : chr  "13/02/2020 01:59:56" "16/02/2020 02:00:35" "16/02/2020 05:00:00" "18/02/2020 02:00:25" ...
- $ INTSIZE           : int  360041 360037 360011 366037 360019 360011 360010 360017 360012 360007 ...
- $ NUM_INTERVAL      : int  60 60 60 61 60 60 60 60 60 60 ...
- $ MINVAL            : int  0 0 0 0 0 0 0 0 0 0 ...
- $ AVERAGE           : num  99.9 99.9 99.9 99.9 99.9 ...
- $ MAXVAL            : num  99.9 99.9 99.9 99.9 99.9 ...
- $ STANDARD_DEVIATION: num  NaN NaN NaN NaN NaN NaN NaN NaN NaN NaN ...
- $ sampleTime        : POSIXct, format: "2020-02-13 00:59:00" "2020-02-16 01:00:00" "2020-02-16 03:59:00" "2020-02-18 00:59:00" ...
- - attr(*, "sorted")= chr  "sampleTime" "METRIC_ID" "GROUP_ID"
- - attr(*, ".internal.selfref")=<externalptr> 
-> View(dt.test[is.na(STANDARD_DEVIATION), ])
-> ls()
-[1] "daten"         "daten.metrics" "dt"            "dt.metrics"    "dt.test"       "sTime"         "sTimeTmp"     
-> dt.metrics[ METRIC_ID == 2115, ]
-   METRIC_ID GROUP_ID
-1:      2115        2
-> daten.metrics[ daten.metrics$METRIC_ID == 2115, ]
-    METRIC_ID     METRIC_NAME        METRIC_UNIT GROUP_ID                   GROUP_NAME INTERVAL_SIZE MAX_INTERVAL
-116      2115 PGA Cache Hit % % Bytes/TotalBytes        2 System Metrics Long Duration          6000           60
-> 
+sTime <- trunc(sTimeTmp, units="mins")
+dt[, sampleTime := as.POSIXct(sTime)]
+setkeyv(dt, c("sampleTime", "METRIC_ID", "GROUP_ID", "INSTANCE_NUMBER"))
+str(dt)
+
+## Spaltennamen korrigieren; hat noch BOM des Files
+colnames(dt)
+dt.names <- colnames(dt)
+dt.names[1] <- "SNAP_ID"
+dt.names
+colnames(dt) <- dt.names
+str(dt)
+
+## �berpr�fen, ob alle Samples vollst�ndig sind (alle Metriken), oder nicht
+daten.metrics <- read.csv2(file="metrics-meta.dsv", sep=";", dec=".", stringsAsFactors=F)
+dt.metrics <- data.table(daten.metrics[, c("METRIC_ID", "GROUP_ID")])
+setkeyv(dt.metrics, c("METRIC_ID", "GROUP_ID"))
+str(dt.metrics)
+
+dt.test <- merge(dt, dt.metrics, by=c("METRIC_ID", "GROUP_ID"), all=T)
+setkeyv(dt.test, c("sampleTime", "METRIC_ID", "GROUP_ID"))
+str(dt.test)
+
+str(dt.test[is.na(MINVAL), ])
+str(dt.test[is.na(MAXVAL), ])
+str(dt.test[is.na(AVERAGE), ])
+str(dt.test[is.na(STANDARD_DEVIATION), ])
+##  --> hat NA-Werte; die wurden aber bereits so importiert; somit alles i.O.
+
+## Quantile f�r AVERAGE (Median des Mittelwertes etc.)
+library(broom)
+dt.average.quantile <- dt[ NUM_INTERVAL >= 57 & NUM_INTERVAL <= 63, glance(summary(AVERAGE)), by=list(METRIC_ID, GROUP_ID, INSTANCE_NUMBER)]
+setkeyv(dt.average.quantile, c("METRIC_ID", "GROUP_ID", "INSTANCE_NUMBER"))
+str(dt.average.quantile)
+
+dt.quantiled <- merge(dt, dt.average.quantile, by=c("METRIC_ID","GROUP_ID","INSTANCE_NUMBER"), all=F)
+setkeyv(dt.quantiled, c("SNAP_ID", "METRIC_ID", "GROUP_ID", "INSTANCE_NUMBER"))
+str(dt.quantiled)
+dt.quantiled
+
+## Messung anhand von AVERAGE und den Quantilen q1 und q3 kategorisieren als 'L' (tief), 'M' (mittel) oder 'H' (hoch)
+dt.quantiled[, category := as.factor('x')]
+str(dt.quantiled)
+dt.quantiled[ AVERAGE < q1, category := as.factor('L')]
+dt.quantiled[ AVERAGE > q3, category := as.factor('H')]
+dt.quantiled[ AVERAGE <= q3 & AVERAGE >= q1, category := as.factor('M')]
+str(dt.quantiled)
+dt.quantiled[ category == as.factor('x'), ]
+## --> leer
+
+## Metadaten zu den Metriken
+str(daten.metrics)
+dt.metrics.meta <- data.table(daten.metrics)
+setkeyv(dt.metrics.meta, c("METRIC_ID", "GROUP_ID"))
+str(dt.metrics.meta)
+
+dt.avg.named <- merge(dt.quantiled, dt.metrics.meta[, list(METRIC_ID, GROUP_ID, METRIC_NAME)], by=c("METRIC_ID", "GROUP_ID") )
+setkeyv(dt.avg.named, c("SNAP_ID", "METRIC_ID", "GROUP_ID", "INSTANCE_NUMBER"))
+str(dt.avg.named)
+
+## Datenstruktur f�r weitere Analyse erzeugen
+dt.avg.category <- dt.avg.named[, list(SNAP_ID, INSTANCE_NUMBER, METRIC_ID, GROUP_ID,
+  "metricItem" = paste(METRIC_NAME, ' (', GROUP_ID, ') ', category, sep=""),
+  "category" = as.character(category))]
+setkeyv(dt.avg.category, c("SNAP_ID", "INSTANCE_NUMBER", "METRIC_ID", "GROUP_ID"))
+str(dt.avg.category)
+
+
+setwd('C:/data/CAS-ADS/Git.repos/CAS-Applied-Data-Science/Machine-Learning-Project/project.1/metriken.2020-03-14/analysis/prod.dba_hist_sysmetric_summary.2020-02-12-bis-2020-03-14/R.workspaces')
+
+save(dt.avg.category, dt.metrics.meta, file='sysmetrics-summary.category.RData', safe=T)

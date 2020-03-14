@@ -1,0 +1,279 @@
+## R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
+## Copyright (C) 2018 The R Foundation for Statistical Computing
+## Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+## R ist freie Software und kommt OHNE JEGLICHE GARANTIE.
+## Sie sind eingeladen, es unter bestimmten Bedingungen weiter zu verbreiten.
+## Tippen Sie 'license()' or 'licence()' für Details dazu.
+
+## R ist ein Gemeinschaftsprojekt mit vielen Beitragenden.
+## Tippen Sie 'contributors()' für mehr Information und 'citation()',
+## um zu erfahren, wie R oder R packages in Publikationen zitiert werden können.
+
+## Tippen Sie 'demo()' für einige Demos, 'help()' für on-line Hilfe, oder
+## 'help.start()' für eine HTML Browserschnittstelle zur Hilfe.
+## Tippen Sie 'q()', um R zu verlassen.
+
+setwd(paste('C:/data/CAS-ADS/Git.repos/CAS-Applied-Data-Science/Machine-Learning-Project/project.1/metriken.2020-03-14',
+  'analysis/prod.dba_hist_sysmetric_summary.2020-02-12-bis-2020-03-14/R.workspaces', sep='/'))
+ 
+library(data.table)
+## data.table 1.11.8  Latest news: r-datatable.com
+
+library(broom)
+
+load('sysmetrics-summary.category.RData')
+
+str(dt.avg.category)
+## Classes ‘data.table’ and 'data.frame':  223570 obs. of  6 variables:
+##  $ SNAP_ID        : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
+##  $ INSTANCE_NUMBER: int  1 1 1 1 1 1 1 1 1 1 ...
+##  $ METRIC_ID      : int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
+##  $ GROUP_ID       : int  2 2 2 2 2 2 2 2 2 2 ...
+##  $ metricItem     : chr  "Buffer Cache Hit Ratio (2) L" "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "User Transaction Per Sec (2) L" ...
+##  $ category       : chr  "L" "M" "M" "L" ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "SNAP_ID" "INSTANCE_NUMBER" "METRIC_ID" "GROUP_ID"
+
+str(dt.metrics.meta)
+## Classes ‘data.table’ and 'data.frame':  158 obs. of  7 variables:
+##  $ METRIC_ID    : int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
+##  $ METRIC_NAME  : chr  "Buffer Cache Hit Ratio" "Memory Sorts Ratio" "Redo Allocation Hit Ratio" "User Transaction Per Sec" ...
+##  $ METRIC_UNIT  : chr  "% (LogRead - PhyRead)/LogRead" "% MemSort/(MemSort + DiskSort)" "% (#Redo - RedoSpaceReq)/#Redo" "Transactions Per Second" ...
+##  $ GROUP_ID     : int  2 2 2 2 2 2 2 2 2 2 ...
+##  $ GROUP_NAME   : chr  "System Metrics Long Duration" "System Metrics Long Duration" "System Metrics Long Duration" "System Metrics Long Duration" ...
+##  $ INTERVAL_SIZE: int  6000 6000 6000 6000 6000 6000 6000 6000 6000 6000 ...
+##  $ MAX_INTERVAL : int  60 60 60 60 60 60 60 60 60 60 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "METRIC_ID" "GROUP_ID"
+
+rm(T)
+ 
+## Reformat the data for further processingr
+dt.hum.1 <- dt.avg.category[ INSTANCE_NUMBER == 1 & category %in% c("H", "M"), list(SNAP_ID, metricItem)]
+dt.hum.2 <- dt.avg.category[ INSTANCE_NUMBER == 2 & category %in% c("H", "M"), list(SNAP_ID, metricItem)]
+
+str(dt.hum.1)
+## Classes ‘data.table’ and 'data.frame':  87693 obs. of  2 variables:
+##  $ SNAP_ID   : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
+##  $ metricItem: chr  "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+
+str(dt.hum.2)
+## Classes ‘data.table’ and 'data.frame':  87606 obs. of  2 variables:
+##  $ SNAP_ID   : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
+##  $ metricItem: chr  "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+ 
+## Für jede SNAP_ID müssen die metricItem's als Charactervektor angeordnet werden
+## Schritt 1: Datatable aufteilen in Liste von Datatables; Aufsplitten nach SNAP_ID
+ll.1 <- split(dt.hum.1, by=c("SNAP_ID"), keep.by=F)
+class(ll.1)
+## [1] "list"
+
+str(ll.1[[1]])
+## Classes ‘data.table’ and 'data.frame':  116 obs. of  1 variable:
+##  $ metricItem: chr  "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+ 
+ll.2 <- split(dt.hum.2, by=c("SNAP_ID"), keep.by=F)
+str(ll.2[[1]])
+## Classes ‘data.table’ and 'data.frame':  107 obs. of  1 variable:
+##  $ metricItem: chr  "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+ 
+ll.unlist.1 <- lapply(ll.1, unlist)
+class(ll.unlist.1)
+## [1] "list"
+
+str(ll.unlist.1[[1]])
+## Named chr [1:116] "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" ...
+## - attr(*, "names")= chr [1:116] "metricItem1" "metricItem2" "metricItem3" "metricItem4" ...
+ 
+ll.asVec.1 <- lapply(ll.unlist.1, as.vector)
+class(ll.asVec.1)
+## [1] "list"
+
+str(ll.asVec.1[[1]])
+## chr [1:116] "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" ...
+ 
+## Dito für DB Instanz 2
+ll.unlist.2 <- lapply(ll.2, unlist)
+ll.asVec.2 <- lapply(ll.unlist.2, as.vector)
+str(ll.asVec.2[[1]])
+## chr [1:107] "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" ...
+ 
+library(arules)
+## Lade nötiges Paket: Matrix
+
+## Attache Paket: ‘arules’
+
+## The following objects are masked from ‘package:base’:
+
+##     abbreviate, write
+
+## Create itemMatrix-Objekt als Dateninput
+im.1 <- as(ll.asVec.1, "itemMatrix")
+str(im.1)
+## Formal class 'itemMatrix' [package "arules"] with 3 slots
+##   ..@ data       :Formal class 'ngCMatrix' [package "Matrix"] with 5 slots
+##   .. .. ..@ i       : int [1:87693] 1 3 5 7 9 11 12 17 20 21 ...
+##   .. .. ..@ p       : int [1:709] 0 116 214 324 432 528 663 796 932 1073 ...
+##   .. .. ..@ Dim     : int [1:2] 302 708
+##   .. .. ..@ Dimnames:List of 2
+##   .. .. .. ..$ : NULL
+##   .. .. .. ..$ : NULL
+##   .. .. ..@ factors : list()
+##   ..@ itemInfo   :'data.frame': 302 obs. of  1 variable:
+##   .. ..$ labels: chr [1:302] "Active Parallel Sessions (2) H" "Active Parallel Sessions (2) M" "Active Serial Sessions (2) H" "Active Serial Sessions (2) M" ...
+##   ..@ itemsetInfo:'data.frame': 708 obs. of  1 variable:
+##   .. ..$ itemsetID: chr [1:708] "39768" "39769" "39770" "39771" ...
+ 
+im.2 <- as(ll.asVec.2, "itemMatrix")
+str(im.2)
+## Formal class 'itemMatrix' [package "arules"] with 3 slots
+##   ..@ data       :Formal class 'ngCMatrix' [package "Matrix"] with 5 slots
+##   .. .. ..@ i       : int [1:87606] 1 3 5 7 8 11 12 20 21 28 ...
+##   .. .. ..@ p       : int [1:708] 0 107 188 307 408 500 627 742 854 967 ...
+##   .. .. ..@ Dim     : int [1:2] 304 707
+##   .. .. ..@ Dimnames:List of 2
+##   .. .. .. ..$ : NULL
+##   .. .. .. ..$ : NULL
+##   .. .. ..@ factors : list()
+##   ..@ itemInfo   :'data.frame': 304 obs. of  1 variable:
+##   .. ..$ labels: chr [1:304] "Active Parallel Sessions (2) H" "Active Parallel Sessions (2) M" "Active Serial Sessions (2) H" "Active Serial Sessions (2) M" ...
+##   ..@ itemsetInfo:'data.frame': 707 obs. of  1 variable:
+##   .. ..$ itemsetID: chr [1:707] "39768" "39769" "39770" "39771" ...
+ 
+ 
+summary(im.1)
+## itemMatrix in sparse format with
+##  708 rows (elements/itemsets/transactions) and
+##  302 columns (items) and a density of 0.410133 
+
+## most frequent items:
+##                 Captured user calls (2) M DDL statements parallelized Per Sec (2) M DML statements parallelized Per Sec (2) M 
+##                                       708                                       708                                       708 
+##       Global Cache Blocks Corrupted (2) M      PX downgraded 1 to 25% Per Sec (2) M                                   (Other) 
+##                                       708                                       708                                     84153 
+
+## element (itemset/transaction) length distribution:
+## sizes
+##  74  76  77  79  80  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95  96  97  98  99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 
+##   1   1   1   1   2   2   2   4   2   4   4   5   5   1   4   5   7   4   3   6   3   6   8   6   6   1   5   6   6   4   3   7   8   3   6   4   6   6  15 
+## 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 
+##  11  13  10  11  11  13   9  18  13  18  24  14  20  17  15  22  10  21  25  13  25  31  18  18  15  18  17  13  15  11  12   8  12   5   3   6 
+
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    74.0   115.0   127.0   123.9   136.0   150.0 
+
+## includes extended item information - examples:
+##                           labels
+## 1 Active Parallel Sessions (2) H
+## 2 Active Parallel Sessions (2) M
+## 3   Active Serial Sessions (2) H
+
+summary(im.2)
+## itemMatrix in sparse format with
+##  707 rows (elements/itemsets/transactions) and
+##  304 columns (items) and a density of 0.4076063 
+
+## most frequent items:
+##                 Captured user calls (2) M DML statements parallelized Per Sec (2) M       Global Cache Blocks Corrupted (2) M 
+##                                       707                                       707                                       707 
+##      PX downgraded 1 to 25% Per Sec (2) M     PX downgraded 25 to 50% Per Sec (2) M                                   (Other) 
+##                                       707                                       707                                     84071 
+
+## element (itemset/transaction) length distribution:
+## sizes
+##  75  76  77  81  82  83  84  85  86  87  88  89  90  91  92  93  94  95  96  97  98  99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 
+##   2   1   3   2   3   1   3   1   1   2   5   2   4   4  10   3   9   4   8   8   6   5   6  11   9   7  11   4   5   7   5   5  10   7   5   8  14  21   8 
+## 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 
+##  15  12   9   7  12  12  15  12  12   7  14  10  14  15  14  17  16  21  13  22  21  13  21  14  16  14  15  14  15  12   9  12   8   5   8   3   5   2   1 
+
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    75.0   112.0   127.0   123.9   138.0   155.0 
+
+## includes extended item information - examples:
+##                           labels
+## 1 Active Parallel Sessions (2) H
+## 2 Active Parallel Sessions (2) M
+## 3   Active Serial Sessions (2) H
+ 
+itemFrequency(im.1[, 1:5])
+## Active Parallel Sessions (2) H Active Parallel Sessions (2) M   Active Serial Sessions (2) H   Active Serial Sessions (2) M  Average Active Sessions (2) H 
+##                     0.07062147                     0.92937853                     0.25141243                     0.49717514                     0.25141243 
+
+itemFrequency(im.2[, 1:5])
+## Active Parallel Sessions (2) H Active Parallel Sessions (2) M   Active Serial Sessions (2) H   Active Serial Sessions (2) M  Average Active Sessions (2) H 
+##                     0.03677511                     0.96322489                     0.25035361                     0.50070721                     0.25035361 
+ 
+itemFrequencyPlot(im.1, topN = 50, col="red")
+itemFrequencyPlot(im.2, topN = 50, col="red")
+ 
+image(sample(im.1, 100))
+image(sample(im.2, 100))
+ 
+rules.1 <- apriori(data = im.1, parameter = list(support=0.1, confidence=0.9, minlen=2))
+## Apriori
+
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen maxlen target   ext
+##         0.9    0.1    1 none FALSE            TRUE       5     0.1      2     10  rules FALSE
+
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+
+## Absolute minimum support count: 70 
+
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[302 item(s), 708 transaction(s)] done [0.02s].
+## sorting and recoding items ... [297 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [10.61s].
+## writing ... [24898244 rule(s)] done [4.95s].
+## creating S4 object  ... done [6.03s].
+## Warnmeldung:
+## In apriori(data = im.1, parameter = list(support = 0.1, confidence = 0.9,  :
+##   Mining stopped (time limit reached). Only patterns up to a length of 4 returned!
+
+rules.1
+## set of 24898244 rules 
+ 
+summary(rules.1)
+## set of 24898244 rules
+
+## rule length distribution (lhs + rhs):sizes
+##        2        3        4 
+##     5638   608360 24284246 
+
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##   2.000   4.000   4.000   3.975   4.000   4.000 
+
+## summary of quality measures:
+##     support         confidence          lift            count      
+##  Min.   :0.1003   Min.   :0.9000   Min.   :0.9256   Min.   : 71.0  
+##  1st Qu.:0.1243   1st Qu.:0.9709   1st Qu.:1.0000   1st Qu.: 88.0  
+##  Median :0.1568   Median :1.0000   Median :1.0000   Median :111.0  
+##  Mean   :0.1814   Mean   :0.9814   Mean   :1.2589   Mean   :128.4  
+##  3rd Qu.:0.2189   3rd Qu.:1.0000   3rd Qu.:1.0698   3rd Qu.:155.0  
+##  Max.   :1.0000   Max.   :1.0000   Max.   :9.8333   Max.   :708.0  
+
+## mining info:
+##  data ntransactions support confidence
+##  im.1           708     0.1        0.9
+ 
+inspect(sort(rules.1, by="lift")[1:10])
+##      lhs                                                                rhs                       support   confidence lift     count
+## [1]  {Disk Sort Per Txn (2) H}                                       => {Disk Sort Per Sec (2) H} 0.1016949 1          9.833333 72   
+## [2]  {Disk Sort Per Sec (2) H}                                       => {Disk Sort Per Txn (2) H} 0.1016949 1          9.833333 72   
+## [3]  {Disk Sort Per Txn (2) H,PX downgraded 1 to 25% Per Sec (2) M}  => {Disk Sort Per Sec (2) H} 0.1016949 1          9.833333 72   
+## [4]  {Disk Sort Per Sec (2) H,PX downgraded 1 to 25% Per Sec (2) M}  => {Disk Sort Per Txn (2) H} 0.1016949 1          9.833333 72   
+## [5]  {Disk Sort Per Txn (2) H,PX downgraded 25 to 50% Per Sec (2) M} => {Disk Sort Per Sec (2) H} 0.1016949 1          9.833333 72   
+## [6]  {Disk Sort Per Sec (2) H,PX downgraded 25 to 50% Per Sec (2) M} => {Disk Sort Per Txn (2) H} 0.1016949 1          9.833333 72   
+## [7]  {Disk Sort Per Txn (2) H,PX downgraded 50 to 75% Per Sec (2) M} => {Disk Sort Per Sec (2) H} 0.1016949 1          9.833333 72   
+## [8]  {Disk Sort Per Sec (2) H,PX downgraded 50 to 75% Per Sec (2) M} => {Disk Sort Per Txn (2) H} 0.1016949 1          9.833333 72   
+## [9]  {Disk Sort Per Txn (2) H,PX downgraded 75 to 99% Per Sec (2) M} => {Disk Sort Per Sec (2) H} 0.1016949 1          9.833333 72   
+## [10] {Disk Sort Per Sec (2) H,PX downgraded 75 to 99% Per Sec (2) M} => {Disk Sort Per Txn (2) H} 0.1016949 1          9.833333 72   
+ 
