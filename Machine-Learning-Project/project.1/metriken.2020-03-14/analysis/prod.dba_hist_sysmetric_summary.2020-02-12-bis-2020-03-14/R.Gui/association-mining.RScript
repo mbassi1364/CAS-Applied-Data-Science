@@ -1,4 +1,5 @@
-setwd('C:/data/CAS-ADS/Git.repos/CAS-Applied-Data-Science/Machine-Learning-Project/project.1/metriken.2020-03-14/analysis/prod.dba_hist_sysmetric_summary.2020-02-12-bis-2020-03-14/R.workspaces')
+setwd(paste('C:/data/CAS-ADS/Git.repos/CAS-Applied-Data-Science/Machine-Learning-Project/project.1/metriken.2020-03-14',
+  'analysis/prod.dba_hist_sysmetric_summary.2020-02-12-bis-2020-03-14/R.workspaces', sep='/'))
 
 library(data.table)
 library(broom)
@@ -10,8 +11,8 @@ str(dt.metrics.meta)
 rm(T)
 
 ## Reformat the data for further processingr
-dt.hum.1 <- dt.avg.category[ INSTANCE_NUMBER == 1 & category %in% c("H", "M"), list(SNAP_ID, metricItem)]
-dt.hum.2 <- dt.avg.category[ INSTANCE_NUMBER == 2 & category %in% c("H", "M"), list(SNAP_ID, metricItem)]
+dt.hum.1 <- dt.avg.category[ INSTANCE_NUMBER == 1 & category %in% c("H"), list(SNAP_ID, metricItem)]
+dt.hum.2 <- dt.avg.category[ INSTANCE_NUMBER == 2 & category %in% c("H"), list(SNAP_ID, metricItem)]
 str(dt.hum.1)
 str(dt.hum.2)
 
@@ -37,32 +38,74 @@ ll.unlist.2 <- lapply(ll.2, unlist)
 ll.asVec.2 <- lapply(ll.unlist.2, as.vector)
 str(ll.asVec.2[[1]])
 
+## Metriken beider Datenbankinstanzen kombinieren
+ll.12 <- list(ll.asVec.1, ll.asVec.2)
+
+length(ll.12)
+length(ll.12[[1]])
+length(ll.12[[2]])
+
+library(rlist)
+ll <- list.flatten(ll.12)
+
+length(ll)
+str(ll[513])
+
 library(arules)
 
 ## Create itemMatrix-Objekt als Dateninput
-im.1 <- as(ll.asVec.1, "itemMatrix")
-str(im.1)
-
-im.2 <- as(ll.asVec.2, "itemMatrix")
-str(im.2)
+im <- as(ll, "itemMatrix")
 
 
 ## Daten betrachten
-summary(im.1)
-summary(im.2)
+summary(im)
 
-itemFrequency(im.1[, 1:5])
-itemFrequency(im.2[, 1:5])
+itemFrequency(im[, 1:5])
 
-itemFrequencyPlot(im.1, topN = 50, col="red")
-itemFrequencyPlot(im.2, topN = 50, col="red")
+itemFrequencyPlot(im)
 
-image(sample(im.1, 100))
-image(sample(im.2, 100))
+image(sample(im, 150), xlab = "Metrik", ylab="Sampled")
 
-rules.1 <- apriori(data = im.1, parameter = list(support=0.1, confidence=0.9, minlen=2))
-rules.1
+rules <- apriori(data = im, parameter = list(support=0.2, confidence=0.9, minlen=2))
+rules
 
-summary(rules.1)
+summary(rules)
 
-inspect(sort(rules.1, by="lift")[1:10])
+## Statistiken für die Inputdaten
+head(interestMeasure(rules, c("support", "chiSquare", "confidence", "conviction","cosine", "coverage", "leverage", "lift","oddsRatio"), im))
+
+inspect(sort(rules, by="lift")[1:10])
+
+## Spezifisch 1: Rules, die den Global Cache betreffen
+gc.rules <- subset(rules, items %pin% "GC" | items %pin% "Global")
+gc.rules
+
+## Spezifisch 2: Rules, die den Library Cache betreffen
+lc.rules <- subset(rules, items %pin% "Library Cache")
+inspect(lc.rules)
+
+## Spezifisch 3: Rules, die Table Scans betreffen (LHS)
+ts.rules <- subset(rules, lhs %pin% "Table Scans")
+ts.rules
+inspect(sort(ts.rules, by="lift")[1:10])
+
+library(arulesViz)
+plot(ts.rules)
+
+## Rules neu generieren, aber nur solche, die Library Cache betreffen (LHS)
+metrics <- itemLabels(im)
+metrics.libcache <- metrics[grep("Library Cache",metrics)]
+metrics.libcache
+lc_rules <- apriori(data=im, parameter = list(support=0.1, confidence=0.9, minlen=2), appearance=list(default="rhs", lhs=metrics.libcache))
+lc_rules
+inspect(sort(lc_rules, by="lift"))
+
+## Rules neu generieren, aber nur solche, die Library Cache betreffen (RHS)
+lc_rules <- apriori(data=im, parameter = list(support=0.1, confidence=0.9, minlen=2, maxlen = 3), appearance=list(default="lhs", rhs=metrics.libcache))
+lc_rules
+inspect(sort(lc_rules, by="lift")[1:20])
+
+## Spezifisch 4: Rules für Library Cache Miss Ration auf der rechten Seite
+lc_rules.miss <- subset(lc_rules, rhs %in% "Library Cache Miss Ratio (2) H")
+lc_rules.miss
+inspect(sort(lc_rules.miss, by="lift")[1:20])
