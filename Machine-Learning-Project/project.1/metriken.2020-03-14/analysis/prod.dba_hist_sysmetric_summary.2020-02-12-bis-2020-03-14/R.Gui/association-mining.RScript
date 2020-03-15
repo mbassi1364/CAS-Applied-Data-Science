@@ -1,0 +1,111 @@
+setwd(paste('C:/data/CAS-ADS/Git.repos/CAS-Applied-Data-Science/Machine-Learning-Project/project.1/metriken.2020-03-14',
+  'analysis/prod.dba_hist_sysmetric_summary.2020-02-12-bis-2020-03-14/R.workspaces', sep='/'))
+
+library(data.table)
+library(broom)
+
+load('sysmetrics-summary.category.RData')
+
+str(dt.avg.category)
+str(dt.metrics.meta)
+rm(T)
+
+## Reformat the data for further processingr
+dt.hum.1 <- dt.avg.category[ INSTANCE_NUMBER == 1 & category %in% c("H"), list(SNAP_ID, metricItem)]
+dt.hum.2 <- dt.avg.category[ INSTANCE_NUMBER == 2 & category %in% c("H"), list(SNAP_ID, metricItem)]
+str(dt.hum.1)
+str(dt.hum.2)
+
+## Für jede SNAP_ID müssen die metricItem's als Charactervektor angeordnet werden
+## Schritt 1: Datatable aufteilen in Liste von Datatables; Aufsplitten nach SNAP_ID
+ll.1 <- split(dt.hum.1, by=c("SNAP_ID"), keep.by=F)
+class(ll.1)
+str(ll.1[[1]])
+
+ll.2 <- split(dt.hum.2, by=c("SNAP_ID"), keep.by=F)
+str(ll.2[[1]])
+
+ll.unlist.1 <- lapply(ll.1, unlist)
+class(ll.unlist.1)
+str(ll.unlist.1[[1]])
+
+ll.asVec.1 <- lapply(ll.unlist.1, as.vector)
+class(ll.asVec.1)
+str(ll.asVec.1[[1]])
+
+## Dito für DB Instanz 2
+ll.unlist.2 <- lapply(ll.2, unlist)
+ll.asVec.2 <- lapply(ll.unlist.2, as.vector)
+str(ll.asVec.2[[1]])
+
+## Metriken beider Datenbankinstanzen kombinieren
+ll.12 <- list(ll.asVec.1, ll.asVec.2)
+
+length(ll.12)
+length(ll.12[[1]])
+length(ll.12[[2]])
+
+library(rlist)
+ll <- list.flatten(ll.12)
+
+length(ll)
+str(ll[513])
+
+library(arules)
+
+## Create itemMatrix-Objekt als Dateninput
+im <- as(ll, "itemMatrix")
+
+
+## Daten betrachten
+summary(im)
+
+itemFrequency(im[, 1:5])
+
+itemFrequencyPlot(im)
+
+image(sample(im, 150), xlab = "Metrik", ylab="Sampled")
+
+rules <- apriori(data = im, parameter = list(support=0.2, confidence=0.9, minlen=2))
+rules
+
+summary(rules)
+
+## Statistiken für die Inputdaten
+head(interestMeasure(rules, c("support", "chiSquare", "confidence", "conviction","cosine", "coverage", "leverage", "lift","oddsRatio"), im))
+
+inspect(sort(rules, by="lift")[1:10])
+
+## Spezifisch 1: Rules, die den Global Cache betreffen
+gc.rules <- subset(rules, items %pin% "GC" | items %pin% "Global")
+gc.rules
+
+## Spezifisch 2: Rules, die den Library Cache betreffen
+lc.rules <- subset(rules, items %pin% "Library Cache")
+inspect(lc.rules)
+
+## Spezifisch 3: Rules, die Table Scans betreffen (LHS)
+ts.rules <- subset(rules, lhs %pin% "Table Scans")
+ts.rules
+inspect(sort(ts.rules, by="lift")[1:10])
+
+library(arulesViz)
+plot(ts.rules)
+
+## Rules neu generieren, aber nur solche, die Library Cache betreffen (LHS)
+metrics <- itemLabels(im)
+metrics.libcache <- metrics[grep("Library Cache",metrics)]
+metrics.libcache
+lc_rules <- apriori(data=im, parameter = list(support=0.1, confidence=0.9, minlen=2), appearance=list(default="rhs", lhs=metrics.libcache))
+lc_rules
+inspect(sort(lc_rules, by="lift"))
+
+## Rules neu generieren, aber nur solche, die Library Cache betreffen (RHS)
+lc_rules <- apriori(data=im, parameter = list(support=0.1, confidence=0.9, minlen=2, maxlen = 3), appearance=list(default="lhs", rhs=metrics.libcache))
+lc_rules
+inspect(sort(lc_rules, by="lift")[1:20])
+
+## Spezifisch 4: Rules für Library Cache Miss Ration auf der rechten Seite
+lc_rules.miss <- subset(lc_rules, rhs %in% "Library Cache Miss Ratio (2) H")
+lc_rules.miss
+inspect(sort(lc_rules.miss, by="lift")[1:20])
