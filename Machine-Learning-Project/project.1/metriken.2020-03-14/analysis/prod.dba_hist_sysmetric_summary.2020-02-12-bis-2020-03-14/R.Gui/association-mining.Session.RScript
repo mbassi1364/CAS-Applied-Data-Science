@@ -1,0 +1,425 @@
+##  R version 3.4.4 (2018-03-15) -- "Someone to Lean On"
+##  Copyright (C) 2018 The R Foundation for Statistical Computing
+##  Platform: x86_64-w64-mingw32/x64 (64-bit)
+
+##  R ist freie Software und kommt OHNE JEGLICHE GARANTIE.
+##  Sie sind eingeladen, es unter bestimmten Bedingungen weiter zu verbreiten.
+##  Tippen Sie 'license()' or 'licence()' für Details dazu.
+
+##  R ist ein Gemeinschaftsprojekt mit vielen Beitragenden.
+##  Tippen Sie 'contributors()' für mehr Information und 'citation()',
+##  um zu erfahren, wie R oder R packages in Publikationen zitiert werden können.
+
+##  Tippen Sie 'demo()' für einige Demos, 'help()' für on-line Hilfe, oder
+##  'help.start()' für eine HTML Browserschnittstelle zur Hilfe.
+##  Tippen Sie 'q()', um R zu verlassen.
+
+setwd(paste('C:/data/CAS-ADS/Git.repos/CAS-Applied-Data-Science/Machine-Learning-Project/project.1/metriken.2020-03-14',
+  'analysis/prod.dba_hist_sysmetric_summary.2020-02-12-bis-2020-03-14/R.workspaces', sep='/'))
+
+library(data.table)
+##  data.table 1.11.8  Latest news: r-datatable.com
+library(broom)
+
+load('sysmetrics-summary.category.RData')
+
+str(dt.avg.category)
+##  Classes ‘data.table’ and 'data.frame':  223570 obs. of  6 variables:
+##   $ SNAP_ID        : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
+##   $ INSTANCE_NUMBER: int  1 1 1 1 1 1 1 1 1 1 ...
+##   $ METRIC_ID      : int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
+##   $ GROUP_ID       : int  2 2 2 2 2 2 2 2 2 2 ...
+##   $ metricItem     : chr  "Buffer Cache Hit Ratio (2) L" "Memory Sorts Ratio (2) M" "Redo Allocation Hit Ratio (2) M" "User Transaction Per Sec (2) L" ...
+##   $ category       : chr  "L" "M" "M" "L" ...
+##   - attr(*, ".internal.selfref")=<externalptr> 
+##   - attr(*, "sorted")= chr  "SNAP_ID" "INSTANCE_NUMBER" "METRIC_ID" "GROUP_ID"
+
+str(dt.metrics.meta)
+##  Classes ‘data.table’ and 'data.frame':  158 obs. of  7 variables:
+##   $ METRIC_ID    : int  2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 ...
+##   $ METRIC_NAME  : chr  "Buffer Cache Hit Ratio" "Memory Sorts Ratio" "Redo Allocation Hit Ratio" "User Transaction Per Sec" ...
+##   $ METRIC_UNIT  : chr  "% (LogRead - PhyRead)/LogRead" "% MemSort/(MemSort + DiskSort)" "% (#Redo - RedoSpaceReq)/#Redo" "Transactions Per Second" ...
+##   $ GROUP_ID     : int  2 2 2 2 2 2 2 2 2 2 ...
+##   $ GROUP_NAME   : chr  "System Metrics Long Duration" "System Metrics Long Duration" "System Metrics Long Duration" "System Metrics Long Duration" ...
+##   $ INTERVAL_SIZE: int  6000 6000 6000 6000 6000 6000 6000 6000 6000 6000 ...
+##   $ MAX_INTERVAL : int  60 60 60 60 60 60 60 60 60 60 ...
+##   - attr(*, ".internal.selfref")=<externalptr> 
+##   - attr(*, "sorted")= chr  "METRIC_ID" "GROUP_ID"
+
+rm(T)
+
+## Reformat the data for further processingr
+dt.hum.1 <- dt.avg.category[ INSTANCE_NUMBER == 1 & category %in% c("H"), list(SNAP_ID, metricItem)]
+dt.hum.2 <- dt.avg.category[ INSTANCE_NUMBER == 2 & category %in% c("H"), list(SNAP_ID, metricItem)]
+
+str(dt.hum.1)
+##  Classes ‘data.table’ and 'data.frame':  24639 obs. of  2 variables:
+##   $ SNAP_ID   : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
+##   $ metricItem: chr  "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" "Physical Writes Per Txn (2) H" "Physical Reads Direct Per Sec (2) H" ...
+##   - attr(*, ".internal.selfref")=<externalptr> 
+
+str(dt.hum.2)
+##  Classes ‘data.table’ and 'data.frame':  24454 obs. of  2 variables:
+##   $ SNAP_ID   : int  39768 39768 39768 39768 39768 39768 39768 39768 39768 39768 ...
+##   $ metricItem: chr  "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" "Physical Reads Direct Per Sec (2) H" "Physical Reads Direct Per Txn (2) H" ...
+##   - attr(*, ".internal.selfref")=<externalptr> 
+
+## Für jede SNAP_ID müssen die metricItem's als Charactervektor angeordnet werden
+## Schritt 1: Datatable aufteilen in Liste von Datatables; Aufsplitten nach SNAP_ID
+ll.1 <- split(dt.hum.1, by=c("SNAP_ID"), keep.by=F)
+
+class(ll.1)
+##  [1] "list"
+
+str(ll.1[[1]])
+##  Classes ‘data.table’ and 'data.frame':  57 obs. of  1 variable:
+##   $ metricItem: chr  "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" "Physical Writes Per Txn (2) H" "Physical Reads Direct Per Sec (2) H" ...
+##   - attr(*, ".internal.selfref")=<externalptr> 
+
+ll.2 <- split(dt.hum.2, by=c("SNAP_ID"), keep.by=F)
+str(ll.2[[1]])
+##  Classes ‘data.table’ and 'data.frame':  56 obs. of  1 variable:
+##   $ metricItem: chr  "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" "Physical Reads Direct Per Sec (2) H" "Physical Reads Direct Per Txn (2) H" ...
+##   - attr(*, ".internal.selfref")=<externalptr> 
+
+ll.unlist.1 <- lapply(ll.1, unlist)
+
+class(ll.unlist.1)
+##  [1] "list"
+
+str(ll.unlist.1[[1]])
+##   Named chr [1:57] "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" "Physical Writes Per Txn (2) H" "Physical Reads Direct Per Sec (2) H" "Physical Reads Direct Per Txn (2) H" ...
+##   - attr(*, "names")= chr [1:57] "metricItem1" "metricItem2" "metricItem3" "metricItem4" ...
+
+ll.asVec.1 <- lapply(ll.unlist.1, as.vector)
+
+class(ll.asVec.1)
+##  [1] "list"
+
+str(ll.asVec.1[[1]])
+##   chr [1:57] "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" "Physical Writes Per Txn (2) H" "Physical Reads Direct Per Sec (2) H" "Physical Reads Direct Per Txn (2) H" ...
+
+## Dito für DB Instanz 2
+ll.unlist.2 <- lapply(ll.2, unlist)
+ll.asVec.2 <- lapply(ll.unlist.2, as.vector)
+
+str(ll.asVec.2[[1]])
+##   chr [1:56] "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" "Physical Reads Direct Per Sec (2) H" "Physical Reads Direct Per Txn (2) H" "Physical Reads Direct Lobs Per Sec (2) H" ...
+
+## Metriken beider Datenbankinstanzen kombinieren
+ll.12 <- list(ll.asVec.1, ll.asVec.2)
+
+length(ll.12)
+##  [1] 2
+length(ll.12[[1]])
+##  [1] 708
+length(ll.12[[2]])
+##  [1] 707
+
+## Beide Listen zu einer verschmelzen
+library(rlist)
+ll <- list.flatten(ll.12)
+
+length(ll)
+##  [1] 1415
+
+str(ll[513])
+##  List of 1
+##   $ 40298: chr [1:79] "Physical Reads Per Sec (2) H" "Physical Reads Per Txn (2) H" "Physical Writes Per Sec (2) H" "Physical Writes Per Txn (2) H" ...
+
+library(arules)
+##  Lade nötiges Paket: Matrix
+##  Attache Paket: ‘arules’
+##  The following objects are masked from ‘package:base’:
+##      abbreviate, write
+
+## Create itemMatrix-Objekt als Dateninput für Association Mining (Sparse Matrix)
+im <- as(ll, "itemMatrix")
+
+## Daten betrachten
+summary(im)
+##  itemMatrix in sparse format with
+##   1415 rows (elements/itemsets/transactions) and
+##   146 columns (items) and a density of 0.2376349 
+
+##  most frequent items:
+##               CPU Usage Per Txn (2) H         Cursor Cache Hit Ratio (2) H       Database Wait Time Ratio (2) H DB Block Changes Per User Call (2) H       Enqueue Requests Per Txn (2) H 
+##                                   356                                  356                                  356                                  356                                  356 
+##                               (Other) 
+##                                 47313 
+
+##  element (itemset/transaction) length distribution:
+##  sizes
+##   2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 
+##   2  6 10 18 21 16 16 23 17 25 20 36 29 19 33 32 15 23 30 27 26 30 25 24 24 21 18 27 17 25 22 22 13 18 18 15 30 30 28 19 33 27 29 20 39 20 32 10 28 25 23 29 21 10 22 18 13 16 14 13  9  9 10  8  6  3  1 
+##  69 70 71 72 73 74 75 76 77 78 79 80 81 83 84 85 86 90 
+##   1  9  4  6  4  5  3  1  4  3  2  3  2  5  1  2  1  1 
+
+##     Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##     2.00   19.00   34.00   34.69   48.00   90.00 
+
+##  includes extended item information - examples:
+##                            labels
+##  1 Active Parallel Sessions (2) H
+##  2   Active Serial Sessions (2) H
+##  3  Average Active Sessions (2) H
+
+itemFrequency(im[, 1:5])
+##                       Active Parallel Sessions (2) H                        Active Serial Sessions (2) H                       Average Active Sessions (2) H 
+##                                           0.05371025                                          0.25088339                                          0.25088339 
+##  Average Synchronous Single-Block Read Latency (2) H                Background Checkpoints Per Sec (2) H 
+##                                           0.25017668                                          0.23462898 
+
+itemFrequencyPlot(im)
+
+image(sample(im, 150), xlab = "Metrik", ylab="Sampled")
+
+rules <- apriori(data = im, parameter = list(support=0.2, confidence=0.9, minlen=2))
+##  Apriori
+
+##  Parameter specification:
+##   confidence minval smax arem  aval originalSupport maxtime support minlen maxlen target   ext
+##          0.9    0.1    1 none FALSE            TRUE       5     0.2      2     10  rules FALSE
+
+##  Algorithmic control:
+##   filter tree heap memopt load sort verbose
+##      0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+
+##  Absolute minimum support count: 283 
+
+##  set item appearances ...[0 item(s)] done [0.00s].
+##  set transactions ...[146 item(s), 1415 transaction(s)] done [0.02s].
+##  sorting and recoding items ... [137 item(s)] done [0.00s].
+##  creating transaction tree ... done [0.00s].
+##  checking subsets of size 1 2 3 4 5 6 done [0.00s].
+##  writing ... [2176 rule(s)] done [0.00s].
+##  creating S4 object  ... done [0.00s].
+rules
+##  set of 2176 rules 
+
+summary(rules)
+##  set of 2176 rules
+
+##  rule length distribution (lhs + rhs):sizes
+##    2   3   4   5   6 
+##  111 903 837 290  35 
+
+##     Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##    2.000   3.000   4.000   3.648   4.000   6.000 
+
+##  summary of quality measures:
+##      support         confidence          lift           count      
+##   Min.   :0.2000   Min.   :0.9000   Min.   :3.580   Min.   :283.0  
+##   1st Qu.:0.2021   1st Qu.:0.9454   1st Qu.:3.763   1st Qu.:286.0  
+##   Median :0.2042   Median :0.9728   Median :3.874   Median :289.0  
+##   Mean   :0.2083   Mean   :0.9659   Mean   :3.846   Mean   :294.7  
+##   3rd Qu.:0.2092   3rd Qu.:0.9931   3rd Qu.:3.956   3rd Qu.:296.0  
+##   Max.   :0.2509   Max.   :1.0000   Max.   :3.997   Max.   :355.0  
+
+##  mining info:
+##   data ntransactions support confidence
+##     im          1415     0.2        0.9
+
+
+## Statistiken für die Inputdaten
+head(interestMeasure(rules, c("support", "chiSquare", "confidence", "conviction","cosine", "coverage", "leverage", "lift","oddsRatio"), im))
+##      support chiSquared confidence conviction    cosine  coverage  leverage     lift oddsRatio
+##  1 0.2501767   1404.378  0.9971831   265.9364 0.9971831 0.2508834 0.1872342 3.974688    374886
+##  2 0.2501767   1404.378  0.9971831   265.9364 0.9971831 0.2508834 0.1872342 3.974688    374886
+##  3 0.2508834   1415.000  1.0000000         NA 1.0000000 0.2508834 0.1879409 3.985915        NA
+##  4 0.2508834   1415.000  1.0000000         NA 1.0000000 0.2508834 0.1879409 3.985915        NA
+##  5 0.2508834   1415.000  1.0000000         NA 1.0000000 0.2508834 0.1879409 3.985915        NA
+##  6 0.2508834   1415.000  1.0000000         NA 1.0000000 0.2508834 0.1879409 3.985915        NA
+
+
+inspect(sort(rules, by="lift")[1:10])
+##       lhs                                                                              rhs                                  support   confidence lift     count
+##  [1]  {Physical Write Bytes Per Sec (2) H}                                          => {Physical Writes Per Sec (2) H}      0.2501767 1          3.997175 354  
+##  [2]  {Physical Writes Per Sec (2) H}                                               => {Physical Write Bytes Per Sec (2) H} 0.2501767 1          3.997175 354  
+##  [3]  {User Transaction Per Sec (2) H}                                              => {User Commits Per Sec (2) H}         0.2501767 1          3.997175 354  
+##  [4]  {User Commits Per Sec (2) H}                                                  => {User Transaction Per Sec (2) H}     0.2501767 1          3.997175 354  
+##  [5]  {Host CPU Usage Per Sec (2) H}                                                => {Host CPU Utilization (%) (2) H}     0.2501767 1          3.997175 354  
+##  [6]  {Host CPU Utilization (%) (2) H}                                              => {Host CPU Usage Per Sec (2) H}       0.2501767 1          3.997175 354  
+##  [7]  {Enqueue Requests Per Sec (2) H,User Transaction Per Sec (2) H}               => {User Commits Per Sec (2) H}         0.2289753 1          3.997175 324  
+##  [8]  {Enqueue Requests Per Sec (2) H,User Commits Per Sec (2) H}                   => {User Transaction Per Sec (2) H}     0.2289753 1          3.997175 324  
+##  [9]  {Physical Write Bytes Per Sec (2) H,Physical Write Total Bytes Per Sec (2) H} => {Physical Writes Per Sec (2) H}      0.2042403 1          3.997175 289  
+##  [10] {Physical Write Total Bytes Per Sec (2) H,Physical Writes Per Sec (2) H}      => {Physical Write Bytes Per Sec (2) H} 0.2042403 1          3.997175 289  
+
+## Spezifisch 1: Rules, die den Global Cache betreffen
+gc.rules <- subset(rules, items %pin% "GC" | items %pin% "Global")
+gc.rules
+##  set of 0 rules 
+
+## Spezifisch 2: Rules, die den Library Cache betreffen
+lc.rules <- subset(rules, items %pin% "Library Cache")
+
+inspect(lc.rules)
+##      lhs                                                             rhs                              support   confidence lift     count
+##  [1] {Library Cache Miss Ratio (2) H}                             => {Hard Parse Count Per Txn (2) H} 0.2310954 0.9211268  3.661220 327  
+##  [2] {Hard Parse Count Per Txn (2) H}                             => {Library Cache Miss Ratio (2) H} 0.2310954 0.9185393  3.661220 327  
+##  [3] {Library Cache Miss Ratio (2) H,Redo Writes Per Txn (2) H}   => {Enqueue Waits Per Txn (2) H}    0.2042403 0.9796610  3.893877 289  
+##  [4] {Enqueue Waits Per Txn (2) H,Library Cache Miss Ratio (2) H} => {Redo Writes Per Txn (2) H}      0.2042403 0.9633333  3.828979 289  
+
+## Spezifisch 3: Rules, die Table Scans betreffen (LHS)
+ts.rules <- subset(rules, lhs %pin% "Table Scans")
+ts.rules
+##  set of 137 rules 
+
+inspect(sort(ts.rules, by="lift")[1:10])
+##       lhs                                      rhs                                     support confidence     lift count
+##  [1]  {Consistent Read Gets Per Txn (2) H,                                                                              
+##        Total Table Scans Per Txn (2) H}     => {Logical Reads Per Txn (2) H}         0.2021201  1.0000000 3.985915   286
+##  [2]  {Consistent Read Gets Per Txn (2) H,                                                                              
+##        Long Table Scans Per Txn (2) H}      => {Logical Reads Per Txn (2) H}         0.2056537  1.0000000 3.985915   291
+##  [3]  {DBWR Checkpoints Per Sec (2) H,                                                                                  
+##        Long Table Scans Per Txn (2) H}      => {Physical Reads Direct Per Txn (2) H} 0.2028269  1.0000000 3.974719   287
+##  [4]  {DBWR Checkpoints Per Sec (2) H,                                                                                  
+##        Enqueue Waits Per Txn (2) H,                                                                                     
+##        Long Table Scans Per Txn (2) H}      => {Physical Reads Direct Per Txn (2) H} 0.2000000  1.0000000 3.974719   283
+##  [5]  {Enqueue Requests Per Txn (2) H,                                                                                  
+##        Logons Per Txn (2) H,                                                                                            
+##        Long Table Scans Per Txn (2) H,                                                                                  
+##        Physical Reads Direct Per Txn (2) H} => {Enqueue Waits Per Txn (2) H}         0.2014134  1.0000000 3.974719   285
+##  [6]  {Enqueue Requests Per Txn (2) H,                                                                                  
+##        Enqueue Waits Per Txn (2) H,                                                                                     
+##        Logons Per Txn (2) H,                                                                                            
+##        Long Table Scans Per Txn (2) H}      => {Physical Reads Direct Per Txn (2) H} 0.2014134  1.0000000 3.974719   285
+##  [7]  {Enqueue Requests Per Txn (2) H,                                                                                  
+##        Long Table Scans Per Txn (2) H,                                                                                  
+##        Physical Reads Direct Per Txn (2) H,                                                                             
+##        Physical Reads Per Txn (2) H}        => {Enqueue Waits Per Txn (2) H}         0.2021201  1.0000000 3.974719   286
+##  [8]  {Enqueue Waits Per Txn (2) H,                                                                                     
+##        Logons Per Txn (2) H,                                                                                            
+##        Long Table Scans Per Txn (2) H,                                                                                  
+##        Physical Reads Per Txn (2) H}        => {Physical Reads Direct Per Txn (2) H} 0.2049470  1.0000000 3.974719   290
+##  [9]  {Enqueue Requests Per Txn (2) H,                                                                                  
+##        Logons Per Txn (2) H,                                                                                            
+##        Long Table Scans Per Txn (2) H,                                                                                  
+##        Physical Reads Direct Per Txn (2) H,                                                                             
+##        Physical Reads Per Txn (2) H}        => {Enqueue Waits Per Txn (2) H}         0.2007067  1.0000000 3.974719   284
+##  [10] {Enqueue Requests Per Txn (2) H,                                                                                  
+##        Enqueue Waits Per Txn (2) H,                                                                                     
+##        Logons Per Txn (2) H,                                                                                            
+##        Long Table Scans Per Txn (2) H,                                                                                  
+##        Physical Reads Per Txn (2) H}        => {Physical Reads Direct Per Txn (2) H} 0.2007067  1.0000000 3.974719   284
+
+library(arulesViz)
+##  Lade nötiges Paket: grid
+
+plot(ts.rules)
+##  To reduce overplotting, jitter is added! Use jitter = 0 to prevent jitter.
+
+# Rules neu generieren, aber nur solche, die Library Cache betreffen (LHS)
+metrics <- itemLabels(im)
+metrics.libcache <- metrics[grep("Library Cache",metrics)]
+metrics.libcache
+##  [1] "Library Cache Hit Ratio (2) H"  "Library Cache Miss Ratio (2) H"
+
+lc_rules <- apriori(data=im, parameter = list(support=0.1, confidence=0.9, minlen=2), appearance=list(default="rhs", lhs=metrics.libcache))
+##  Apriori
+
+##  Parameter specification:
+##   confidence minval smax arem  aval originalSupport maxtime support minlen maxlen target   ext
+##          0.9    0.1    1 none FALSE            TRUE       5     0.1      2     10  rules FALSE
+
+##  Algorithmic control:
+##   filter tree heap memopt load sort verbose
+##      0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+
+##  Absolute minimum support count: 141 
+
+##  set item appearances ...[2 item(s)] done [0.00s].
+##  set transactions ...[146 item(s), 1415 transaction(s)] done [0.00s].
+##  sorting and recoding items ... [137 item(s)] done [0.00s].
+##  creating transaction tree ... done [0.00s].
+##  checking subsets of size 1 2 done [0.00s].
+##  writing ... [1 rule(s)] done [0.00s].
+##  creating S4 object  ... done [0.00s].
+
+lc_rules
+##  set of 1 rules 
+
+inspect(sort(lc_rules, by="lift"))
+##      lhs                                 rhs                              support   confidence lift    count
+##  [1] {Library Cache Miss Ratio (2) H} => {Hard Parse Count Per Txn (2) H} 0.2310954 0.9211268  3.66122 327
+
+
+## Rules neu generieren, aber nur solche, die Library Cache betreffen (RHS)
+lc_rules <- apriori(data=im, parameter = list(support=0.1, confidence=0.9, minlen=2, maxlen = 3), appearance=list(default="lhs", rhs=metrics.libcache))
+##  Apriori
+
+##  Parameter specification:
+##   confidence minval smax arem  aval originalSupport maxtime support minlen maxlen target   ext
+##          0.9    0.1    1 none FALSE            TRUE       5     0.1      2      3  rules FALSE
+
+##  Algorithmic control:
+##   filter tree heap memopt load sort verbose
+##      0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+
+##  Absolute minimum support count: 141 
+
+##  set item appearances ...[2 item(s)] done [0.00s].
+##  set transactions ...[146 item(s), 1415 transaction(s)] done [0.00s].
+##  sorting and recoding items ... [137 item(s)] done [0.00s].
+##  creating transaction tree ... done [0.00s].
+##  checking subsets of size 1 2 3 done [0.01s].
+##  writing ... [144 rule(s)] done [0.00s].
+##  creating S4 object  ... done [0.00s].
+##  Warnmeldung:
+##  In apriori(data = im, parameter = list(support = 0.1, confidence = 0.9,  :
+##    Mining stopped (maxlen reached). Only patterns up to a length of 3 returned!
+
+lc_rules
+##  set of 144 rules 
+
+inspect(sort(lc_rules, by="lift")[1:20])
+##       lhs                                                                          rhs                              support   confidence lift     count
+##  [1]  {Soft Parse Ratio (2) H,Total Parse Count Per Sec (2) H}                  => {Library Cache Hit Ratio (2) H}  0.1081272 0.9935065  3.971219 153  
+##  [2]  {Soft Parse Ratio (2) H,User Calls Per Sec (2) H}                         => {Library Cache Hit Ratio (2) H}  0.1159011 0.9879518  3.949016 164  
+##  [3]  {Executions Per Sec (2) H,Soft Parse Ratio (2) H}                         => {Library Cache Hit Ratio (2) H}  0.1067138 0.9869281  3.944924 151  
+##  [4]  {Soft Parse Ratio (2) H,User Commits Per Sec (2) H}                       => {Library Cache Hit Ratio (2) H}  0.1257951 0.9834254  3.930924 178  
+##  [5]  {Soft Parse Ratio (2) H,User Transaction Per Sec (2) H}                   => {Library Cache Hit Ratio (2) H}  0.1257951 0.9834254  3.930924 178  
+##  [6]  {Leaf Node Splits Per Sec (2) H,Soft Parse Ratio (2) H}                   => {Library Cache Hit Ratio (2) H}  0.1038869 0.9800000  3.917232 147  
+##  [7]  {Branch Node Splits Per Sec (2) H,Soft Parse Ratio (2) H}                 => {Library Cache Hit Ratio (2) H}  0.1003534 0.9793103  3.914475 142  
+##  [8]  {Execute Without Parse Ratio (2) H,Hard Parse Count Per Txn (2) H}        => {Library Cache Miss Ratio (2) H} 0.1130742 0.9815951  3.912555 160  
+##  [9]  {Enqueue Requests Per Sec (2) H,Soft Parse Ratio (2) H}                   => {Library Cache Hit Ratio (2) H}  0.1201413 0.9770115  3.905286 170  
+##  [10] {Hard Parse Count Per Txn (2) H,Parse Failure Count Per Sec (2) H}        => {Library Cache Miss Ratio (2) H} 0.1349823 0.9744898  3.884234 191  
+##  [11] {Redo Writes Per Sec (2) H,Soft Parse Ratio (2) H}                        => {Library Cache Hit Ratio (2) H}  0.1180212 0.9709302  3.880978 167  
+##  [12] {Soft Parse Ratio (2) H,User Calls Ratio (2) H}                           => {Library Cache Hit Ratio (2) H}  0.1173145 0.9707602  3.880299 166  
+##  [13] {Open Cursors Per Sec (2) H,Soft Parse Ratio (2) H}                       => {Library Cache Hit Ratio (2) H}  0.1166078 0.9705882  3.879611 165  
+##  [14] {Hard Parse Count Per Sec (2) H,Response Time Per Txn (2) H}              => {Library Cache Miss Ratio (2) H} 0.1229682 0.9720670  3.874577 174  
+##  [15] {Hard Parse Count Per Txn (2) H,Redo Allocation Hit Ratio (2) H}          => {Library Cache Miss Ratio (2) H} 0.1074205 0.9681529  3.858976 152  
+##  [16] {Hard Parse Count Per Sec (2) H,Hard Parse Count Per Txn (2) H}           => {Library Cache Miss Ratio (2) H} 0.1717314 0.9642857  3.843561 243  
+##  [17] {Network Traffic Volume Per Sec (2) H,Soft Parse Ratio (2) H}             => {Library Cache Hit Ratio (2) H}  0.1144876 0.9585799  3.831612 162  
+##  [18] {Enqueue Waits Per Txn (2) H,Redo Allocation Hit Ratio (2) H}             => {Library Cache Miss Ratio (2) H} 0.1017668 0.9600000  3.826479 144  
+##  [19] {Hard Parse Count Per Sec (2) H,Physical Reads Per Txn (2) H}             => {Library Cache Miss Ratio (2) H} 0.1335689 0.9593909  3.824051 189  
+##  [20] {Hard Parse Count Per Txn (2) H,Physical Reads Direct Lobs Per Sec (2) H} => {Library Cache Miss Ratio (2) H} 0.1300353 0.9583333  3.819836 184  
+
+## Spezifisch 4: Rules für Library Cache Miss Ration auf der rechten Seite
+lc_rules.miss <- subset(lc_rules, rhs %in% "Library Cache Miss Ratio (2) H")
+lc_rules.miss
+##  set of 124 rules 
+
+inspect(sort(lc_rules.miss, by="lift")[1:20])
+##       lhs                                                                          rhs                              support   confidence lift     count
+##  [1]  {Execute Without Parse Ratio (2) H,Hard Parse Count Per Txn (2) H}        => {Library Cache Miss Ratio (2) H} 0.1130742 0.9815951  3.912555 160  
+##  [2]  {Hard Parse Count Per Txn (2) H,Parse Failure Count Per Sec (2) H}        => {Library Cache Miss Ratio (2) H} 0.1349823 0.9744898  3.884234 191  
+##  [3]  {Hard Parse Count Per Sec (2) H,Response Time Per Txn (2) H}              => {Library Cache Miss Ratio (2) H} 0.1229682 0.9720670  3.874577 174  
+##  [4]  {Hard Parse Count Per Txn (2) H,Redo Allocation Hit Ratio (2) H}          => {Library Cache Miss Ratio (2) H} 0.1074205 0.9681529  3.858976 152  
+##  [5]  {Hard Parse Count Per Sec (2) H,Hard Parse Count Per Txn (2) H}           => {Library Cache Miss Ratio (2) H} 0.1717314 0.9642857  3.843561 243  
+##  [6]  {Enqueue Waits Per Txn (2) H,Redo Allocation Hit Ratio (2) H}             => {Library Cache Miss Ratio (2) H} 0.1017668 0.9600000  3.826479 144  
+##  [7]  {Hard Parse Count Per Sec (2) H,Physical Reads Per Txn (2) H}             => {Library Cache Miss Ratio (2) H} 0.1335689 0.9593909  3.824051 189  
+##  [8]  {Hard Parse Count Per Txn (2) H,Physical Reads Direct Lobs Per Sec (2) H} => {Library Cache Miss Ratio (2) H} 0.1300353 0.9583333  3.819836 184  
+##  [9]  {Hard Parse Count Per Txn (2) H,SQL Service Response Time (2) H}          => {Library Cache Miss Ratio (2) H} 0.1265018 0.9572193  3.815395 179  
+##  [10] {Hard Parse Count Per Txn (2) H,Physical Reads Direct Lobs Per Txn (2) H} => {Library Cache Miss Ratio (2) H} 0.1575972 0.9570815  3.814846 223  
+##  [11] {Hard Parse Count Per Txn (2) H,Total Table Scans Per User Call (2) H}    => {Library Cache Miss Ratio (2) H} 0.1194346 0.9548023  3.805761 169  
+##  [12] {Hard Parse Count Per Txn (2) H,Parse Failure Count Per Txn (2) H}        => {Library Cache Miss Ratio (2) H} 0.1879859 0.9534050  3.800192 266  
+##  [13] {Parse Failure Count Per Txn (2) H,Physical Reads Per Sec (2) H}          => {Library Cache Miss Ratio (2) H} 0.1540636 0.9519651  3.794452 218  
+##  [14] {Physical Reads Per Txn (2) H,Redo Allocation Hit Ratio (2) H}            => {Library Cache Miss Ratio (2) H} 0.1095406 0.9509202  3.790288 155  
+##  [15] {Enqueue Timeouts Per Txn (2) H,Hard Parse Count Per Txn (2) H}           => {Library Cache Miss Ratio (2) H} 0.1342756 0.9500000  3.786620 190  
+##  [16] {Execute Without Parse Ratio (2) H,Parse Failure Count Per Txn (2) H}     => {Library Cache Miss Ratio (2) H} 0.1060071 0.9493671  3.784097 150  
+##  [17] {Redo Allocation Hit Ratio (2) H,Response Time Per Txn (2) H}             => {Library Cache Miss Ratio (2) H} 0.1031802 0.9480519  3.778855 146  
+##  [18] {Physical Reads Per Sec (2) H,Redo Allocation Hit Ratio (2) H}            => {Library Cache Miss Ratio (2) H} 0.1010601 0.9470199  3.774741 143  
+##  [19] {Physical Reads Direct Per Txn (2) H,Redo Allocation Hit Ratio (2) H}     => {Library Cache Miss Ratio (2) H} 0.1003534 0.9466667  3.773333 142  
+##  [20] {Enqueue Timeouts Per Txn (2) H,Rows Per Sort (2) H}                      => {Library Cache Miss Ratio (2) H} 0.1116608 0.9461078  3.771106 158  
+

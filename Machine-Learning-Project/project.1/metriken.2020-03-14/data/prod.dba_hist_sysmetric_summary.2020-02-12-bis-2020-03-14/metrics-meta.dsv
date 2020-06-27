@@ -1,0 +1,159 @@
+METRIC_ID;METRIC_NAME;METRIC_UNIT;GROUP_ID;GROUP_NAME;INTERVAL_SIZE;MAX_INTERVAL
+2000;Buffer Cache Hit Ratio;% (LogRead - PhyRead)/LogRead;2;System Metrics Long Duration;6000;60
+2001;Memory Sorts Ratio;% MemSort/(MemSort + DiskSort);2;System Metrics Long Duration;6000;60
+2002;Redo Allocation Hit Ratio;% (#Redo - RedoSpaceReq)/#Redo;2;System Metrics Long Duration;6000;60
+2003;User Transaction Per Sec;Transactions Per Second;2;System Metrics Long Duration;6000;60
+2004;Physical Reads Per Sec;Reads Per Second;2;System Metrics Long Duration;6000;60
+2005;Physical Reads Per Txn;Reads Per Txn;2;System Metrics Long Duration;6000;60
+2006;Physical Writes Per Sec;Writes Per Second;2;System Metrics Long Duration;6000;60
+2007;Physical Writes Per Txn;Writes Per Txn;2;System Metrics Long Duration;6000;60
+2008;Physical Reads Direct Per Sec;Reads Per Second;2;System Metrics Long Duration;6000;60
+2009;Physical Reads Direct Per Txn;Reads Per Txn;2;System Metrics Long Duration;6000;60
+2010;Physical Writes Direct Per Sec;Writes Per Second;2;System Metrics Long Duration;6000;60
+2011;Physical Writes Direct Per Txn;Writes Per Txn;2;System Metrics Long Duration;6000;60
+2012;Physical Reads Direct Lobs Per Sec;Reads Per Second;2;System Metrics Long Duration;6000;60
+2013;Physical Reads Direct Lobs Per Txn;Reads Per Txn;2;System Metrics Long Duration;6000;60
+2014;Physical Writes Direct Lobs Per Sec;Writes Per Second;2;System Metrics Long Duration;6000;60
+2015;Physical Writes Direct Lobs  Per Txn;Writes Per Txn;2;System Metrics Long Duration;6000;60
+2016;Redo Generated Per Sec;Bytes Per Second;2;System Metrics Long Duration;6000;60
+2017;Redo Generated Per Txn;Bytes Per Txn;2;System Metrics Long Duration;6000;60
+2018;Logons Per Sec;Logons Per Second;2;System Metrics Long Duration;6000;60
+2019;Logons Per Txn;Logons Per Txn;2;System Metrics Long Duration;6000;60
+2020;Open Cursors Per Sec;Cursors Per Second;2;System Metrics Long Duration;6000;60
+2021;Open Cursors Per Txn;Cursors Per Txn;2;System Metrics Long Duration;6000;60
+2022;User Commits Per Sec;Commits Per Second;2;System Metrics Long Duration;6000;60
+2023;User Commits Percentage;% (UserCommit/TotalUserTxn);2;System Metrics Long Duration;6000;60
+2024;User Rollbacks Per Sec;Rollbacks Per Second;2;System Metrics Long Duration;6000;60
+2025;User Rollbacks Percentage;% (UserRollback/TotalUserTxn);2;System Metrics Long Duration;6000;60
+2026;User Calls Per Sec;Calls Per Second;2;System Metrics Long Duration;6000;60
+2027;User Calls Per Txn;Calls Per Txn;2;System Metrics Long Duration;6000;60
+2028;Recursive Calls Per Sec;Calls Per Second;2;System Metrics Long Duration;6000;60
+2029;Recursive Calls Per Txn;Calls Per Txn;2;System Metrics Long Duration;6000;60
+2030;Logical Reads Per Sec;Reads Per Second;2;System Metrics Long Duration;6000;60
+2031;Logical Reads Per Txn;Reads Per Txn;2;System Metrics Long Duration;6000;60
+2032;DBWR Checkpoints Per Sec;Check Points Per Second;2;System Metrics Long Duration;6000;60
+2033;Background Checkpoints Per Sec;Check Points Per Second;2;System Metrics Long Duration;6000;60
+2034;Redo Writes Per Sec;Writes Per Second;2;System Metrics Long Duration;6000;60
+2035;Redo Writes Per Txn;Writes Per Txn;2;System Metrics Long Duration;6000;60
+2036;Long Table Scans Per Sec;Scans Per Second;2;System Metrics Long Duration;6000;60
+2037;Long Table Scans Per Txn;Scans Per Txn;2;System Metrics Long Duration;6000;60
+2038;Total Table Scans Per Sec;Scans Per Second;2;System Metrics Long Duration;6000;60
+2039;Total Table Scans Per Txn;Scans Per Txn;2;System Metrics Long Duration;6000;60
+2040;Full Index Scans Per Sec;Scans Per Second;2;System Metrics Long Duration;6000;60
+2041;Full Index Scans Per Txn;Scans Per Txn;2;System Metrics Long Duration;6000;60
+2042;Total Index Scans Per Sec;Scans Per Second;2;System Metrics Long Duration;6000;60
+2043;Total Index Scans Per Txn;Scans Per Txn;2;System Metrics Long Duration;6000;60
+2044;Total Parse Count Per Sec;Parses Per Second;2;System Metrics Long Duration;6000;60
+2045;Total Parse Count Per Txn;Parses Per Txn;2;System Metrics Long Duration;6000;60
+2046;Hard Parse Count Per Sec;Parses Per Second;2;System Metrics Long Duration;6000;60
+2047;Hard Parse Count Per Txn;Parses Per Txn;2;System Metrics Long Duration;6000;60
+2048;Parse Failure Count Per Sec;Parses Per Second;2;System Metrics Long Duration;6000;60
+2049;Parse Failure Count Per Txn;Parses Per Txn;2;System Metrics Long Duration;6000;60
+2050;Cursor Cache Hit Ratio;% CursorCacheHit/SoftParse;2;System Metrics Long Duration;6000;60
+2051;Disk Sort Per Sec;Sorts Per Second;2;System Metrics Long Duration;6000;60
+2052;Disk Sort Per Txn;Sorts Per Txn;2;System Metrics Long Duration;6000;60
+2053;Rows Per Sort;Rows Per Sort;2;System Metrics Long Duration;6000;60
+2054;Execute Without Parse Ratio;% (ExecWOParse/TotalExec);2;System Metrics Long Duration;6000;60
+2055;Soft Parse Ratio;% SoftParses/TotalParses;2;System Metrics Long Duration;6000;60
+2056;User Calls Ratio;% UserCalls/AllCalls;2;System Metrics Long Duration;6000;60
+2057;Host CPU Utilization (%);% Busy/(Idle+Busy);2;System Metrics Long Duration;6000;60
+2058;Network Traffic Volume Per Sec;Bytes Per Second;2;System Metrics Long Duration;6000;60
+2059;Enqueue Timeouts Per Sec;Timeouts Per Second;2;System Metrics Long Duration;6000;60
+2060;Enqueue Timeouts Per Txn;Timeouts Per Txn;2;System Metrics Long Duration;6000;60
+2061;Enqueue Waits Per Sec;Waits Per Second;2;System Metrics Long Duration;6000;60
+2062;Enqueue Waits Per Txn;Waits Per Txn;2;System Metrics Long Duration;6000;60
+2063;Enqueue Deadlocks Per Sec;Deadlocks Per Second;2;System Metrics Long Duration;6000;60
+2064;Enqueue Deadlocks Per Txn;Deadlocks Per Txn;2;System Metrics Long Duration;6000;60
+2065;Enqueue Requests Per Sec;Requests Per Second;2;System Metrics Long Duration;6000;60
+2066;Enqueue Requests Per Txn;Requests Per Txn;2;System Metrics Long Duration;6000;60
+2067;DB Block Gets Per Sec;Blocks Per Second;2;System Metrics Long Duration;6000;60
+2068;DB Block Gets Per Txn;Blocks Per Txn;2;System Metrics Long Duration;6000;60
+2069;Consistent Read Gets Per Sec;Blocks Per Second;2;System Metrics Long Duration;6000;60
+2070;Consistent Read Gets Per Txn;Blocks Per Txn;2;System Metrics Long Duration;6000;60
+2071;DB Block Changes Per Sec;Blocks Per Second;2;System Metrics Long Duration;6000;60
+2072;DB Block Changes Per Txn;Blocks Per Txn;2;System Metrics Long Duration;6000;60
+2073;Consistent Read Changes Per Sec;Blocks Per Second;2;System Metrics Long Duration;6000;60
+2074;Consistent Read Changes Per Txn;Blocks Per Txn;2;System Metrics Long Duration;6000;60
+2075;CPU Usage Per Sec;CentiSeconds Per Second;2;System Metrics Long Duration;6000;60
+2076;CPU Usage Per Txn;CentiSeconds Per Txn;2;System Metrics Long Duration;6000;60
+2077;CR Blocks Created Per Sec;Blocks Per Second;2;System Metrics Long Duration;6000;60
+2078;CR Blocks Created Per Txn;Blocks Per Txn;2;System Metrics Long Duration;6000;60
+2079;CR Undo Records Applied Per Sec;Undo Records Per Second;2;System Metrics Long Duration;6000;60
+2080;CR Undo Records Applied Per Txn;Records Per Txn;2;System Metrics Long Duration;6000;60
+2081;User Rollback UndoRec Applied Per Sec;Records Per Second;2;System Metrics Long Duration;6000;60
+2082;User Rollback Undo Records Applied Per Txn;Records Per Txn;2;System Metrics Long Duration;6000;60
+2083;Leaf Node Splits Per Sec;Splits Per Second;2;System Metrics Long Duration;6000;60
+2084;Leaf Node Splits Per Txn;Splits Per Txn;2;System Metrics Long Duration;6000;60
+2085;Branch Node Splits Per Sec;Splits Per Second;2;System Metrics Long Duration;6000;60
+2086;Branch Node Splits Per Txn;Splits Per Txn;2;System Metrics Long Duration;6000;60
+2087;PX downgraded 1 to 25% Per Sec;PX Operations Per Second;2;System Metrics Long Duration;6000;60
+2088;PX downgraded 25 to 50% Per Sec;PX Operations Per Second;2;System Metrics Long Duration;6000;60
+2089;PX downgraded 50 to 75% Per Sec;PX Operations Per Second;2;System Metrics Long Duration;6000;60
+2090;PX downgraded 75 to 99% Per Sec;PX Operations Per Second;2;System Metrics Long Duration;6000;60
+2091;PX downgraded to serial Per Sec;PX Operations Per Second;2;System Metrics Long Duration;6000;60
+2092;Physical Read Total IO Requests Per Sec;Requests Per Second;2;System Metrics Long Duration;6000;60
+2093;Physical Read Total Bytes Per Sec;Bytes Per Second;2;System Metrics Long Duration;6000;60
+2094;GC CR Block Received Per Second;Blocks Per Second;2;System Metrics Long Duration;6000;60
+2095;GC CR Block Received Per Txn;Blocks Per Txn;2;System Metrics Long Duration;6000;60
+2096;GC Current Block Received Per Second;Blocks Per Second;2;System Metrics Long Duration;6000;60
+2097;GC Current Block Received Per Txn;Blocks Per Txn;2;System Metrics Long Duration;6000;60
+2098;Global Cache Average CR Get Time;CentiSeconds Per Get;2;System Metrics Long Duration;6000;60
+2099;Global Cache Average Current Get Time;CentiSeconds Per Get;2;System Metrics Long Duration;6000;60
+2100;Physical Write Total IO Requests Per Sec;Requests Per Second;2;System Metrics Long Duration;6000;60
+2101;Global Cache Blocks Corrupted;Blocks;2;System Metrics Long Duration;6000;60
+2102;Global Cache Blocks Lost;Blocks;2;System Metrics Long Duration;6000;60
+2103;Current Logons Count;Logons;2;System Metrics Long Duration;6000;60
+2104;Current Open Cursors Count;Cursors;2;System Metrics Long Duration;6000;60
+2105;User Limit %;% Sessions/License_Limit;2;System Metrics Long Duration;6000;60
+2106;SQL Service Response Time;CentiSeconds Per Call;2;System Metrics Long Duration;6000;60
+2107;Database Wait Time Ratio;% Wait/DB_Time;2;System Metrics Long Duration;6000;60
+2108;Database CPU Time Ratio;% Cpu/DB_Time;2;System Metrics Long Duration;6000;60
+2109;Response Time Per Txn;CentiSeconds Per Txn;2;System Metrics Long Duration;6000;60
+2110;Row Cache Hit Ratio;% Hits/Gets;2;System Metrics Long Duration;6000;60
+2111;Row Cache Miss Ratio;% Misses/Gets;2;System Metrics Long Duration;6000;60
+2112;Library Cache Hit Ratio;% Hits/Pins;2;System Metrics Long Duration;6000;60
+2113;Library Cache Miss Ratio;% Misses/Gets;2;System Metrics Long Duration;6000;60
+2114;Shared Pool Free %;% Free/Total;2;System Metrics Long Duration;6000;60
+2115;PGA Cache Hit %;% Bytes/TotalBytes;2;System Metrics Long Duration;6000;60
+2118;Process Limit %;% Processes/Limit;2;System Metrics Long Duration;6000;60
+2119;Session Limit %;% Sessions/Limit;2;System Metrics Long Duration;6000;60
+2120;Executions Per Txn;Executes Per Txn;2;System Metrics Long Duration;6000;60
+2121;Executions Per Sec;Executes Per Second;2;System Metrics Long Duration;6000;60
+2122;Txns Per Logon;Txns Per Logon;2;System Metrics Long Duration;6000;60
+2123;Database Time Per Sec;CentiSeconds Per Second;2;System Metrics Long Duration;6000;60
+2124;Physical Write Total Bytes Per Sec;Bytes Per Second;2;System Metrics Long Duration;6000;60
+2125;Physical Read IO Requests Per Sec;Requests Per Second;2;System Metrics Long Duration;6000;60
+2126;Physical Read Bytes Per Sec;Bytes Per Second;2;System Metrics Long Duration;6000;60
+2127;Physical Write IO Requests Per Sec;Requests Per Second;2;System Metrics Long Duration;6000;60
+2128;Physical Write Bytes Per Sec;Bytes Per Second;2;System Metrics Long Duration;6000;60
+2129;DB Block Changes Per User Call;Blocks Per Call;2;System Metrics Long Duration;6000;60
+2130;DB Block Gets Per User Call;Blocks Per Call;2;System Metrics Long Duration;6000;60
+2131;Executions Per User Call;Executes Per Call;2;System Metrics Long Duration;6000;60
+2132;Logical Reads Per User Call;Reads Per Call;2;System Metrics Long Duration;6000;60
+2133;Total Sorts Per User Call;Sorts Per Call;2;System Metrics Long Duration;6000;60
+2134;Total Table Scans Per User Call;Tables Per Call;2;System Metrics Long Duration;6000;60
+2135;Current OS Load;Number Of Processes;2;System Metrics Long Duration;6000;60
+2136;Streams Pool Usage Percentage;% Memory allocated / Size of Streams pool;2;System Metrics Long Duration;6000;60
+2137;PQ QC Session Count;Sessions;2;System Metrics Long Duration;6000;60
+2138;PQ Slave Session Count;Sessions;2;System Metrics Long Duration;6000;60
+2139;Queries parallelized Per Sec;Queries Per Second;2;System Metrics Long Duration;6000;60
+2140;DML statements parallelized Per Sec;Statements Per Second;2;System Metrics Long Duration;6000;60
+2141;DDL statements parallelized Per Sec;Statements Per Second;2;System Metrics Long Duration;6000;60
+2142;PX operations not downgraded Per Sec;PX Operations Per Second;2;System Metrics Long Duration;6000;60
+2143;Session Count;Sessions;2;System Metrics Long Duration;6000;60
+2144;Average Synchronous Single-Block Read Latency;Milliseconds;2;System Metrics Long Duration;6000;60
+2145;I/O Megabytes per Second;Megabtyes per Second;2;System Metrics Long Duration;6000;60
+2146;I/O Requests per Second;Requests per Second;2;System Metrics Long Duration;6000;60
+2147;Average Active Sessions;Active Sessions;2;System Metrics Long Duration;6000;60
+2148;Active Serial Sessions;Sessions;2;System Metrics Long Duration;6000;60
+2149;Active Parallel Sessions;Sessions;2;System Metrics Long Duration;6000;60
+2150;Captured user calls;calls;2;System Metrics Long Duration;6000;60
+2151;Replayed user calls;calls;2;System Metrics Long Duration;6000;60
+2152;Workload Capture and Replay status;status;2;System Metrics Long Duration;6000;60
+2153;Background CPU Usage Per Sec;CentiSeconds Per Second;2;System Metrics Long Duration;6000;60
+2154;Background Time Per Sec;Active Sessions;2;System Metrics Long Duration;6000;60
+2155;Host CPU Usage Per Sec;CentiSeconds Per Second;2;System Metrics Long Duration;6000;60
+2156;Cell Physical IO Interconnect Bytes;bytes;2;System Metrics Long Duration;6000;60
+2157;Temp Space Used;bytes;2;System Metrics Long Duration;6000;60
+2158;Total PGA Allocated;bytes;2;System Metrics Long Duration;6000;60
+2159;Total PGA Used by SQL Workareas;bytes;2;System Metrics Long Duration;6000;60
