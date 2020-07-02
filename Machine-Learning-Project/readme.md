@@ -1,17 +1,15 @@
 <div style="width:1200px;">
 
-<div style="font-size: 200%;">
-Bern Winter School on Machine Leanring, Mürren January 2020
-</div>
+<style>
+.large {font-size:200%; color: DarkBlue;}
+.xlarge {font-size:300%; color: DarkBlue;}
+</style>
 
-<div style="font-size:300%; color: DarkBlue; margin-top:1em;">
-Oracle Metrics Association Mining
-</div>
+<div class="large">Bern Winter School on Machine Leanring, Mürren January 2020</Large></div>
+<div class="xlarge">Oracle Metrics Association Mining</div>
+<div class="large">Machine Learning Projekt von Marco Bassi<br/>
+16.März 2020</div>
 
-<div style="font-size: 200%;">
-Machine Learning Projekt von Marco Bassi<br/>
-16.März 2020
-</div>
 
 <div style="margin-top:3em;" />
 
