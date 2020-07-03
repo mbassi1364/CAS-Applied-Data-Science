@@ -18,7 +18,7 @@ confirm or proof wrong the suspicion, adopting appropriate statistical methods.
 About the Data
 --------------
 
-The database platform is an Oracle 11g RAC with 2 instances. I compaire 2
+The database platform is an Oracle 11g RAC with 2 instances. I compare 2
 metrics from the dynamic performance view DBA_HIST_SYSSTAT:
 
 - physical read total I/O request
